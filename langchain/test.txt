@@ -1,0 +1,12 @@
+Interviewer: Thank you for taking the time to talk with me today. Can you tell me about yourself?
+
+Interviewee: I am abc company having 2500 employees. My annual turnover is 100 million dollars per anum.
+
+Interviewer: what is your business?
+
+Interviewee: Software development.
+
+Interviewer: what is your location?
+
+Interviewee: Megazone Cloud, Gangnam, Seoul
+
