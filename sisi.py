@@ -168,17 +168,22 @@ def main():
                 llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
 
             # show user input
+            prompt_template = st.text_input("Custom Prompt 🎯:")
             user_question = st.text_input("Ask a question 🤖:")
+
+            chat_placeholder = st.empty()
 
             # Fetch all records from the database
             c.execute("SELECT * FROM chat_history")
             rows = c.fetchall()
 
             # Display the chat history
-            st.markdown("<h2>Chat History:</h2>", unsafe_allow_html=True)
+            chat_history = "<h2>Chat History:</h2>"
             for row in rows:
                 st.markdown(f"<strong>User :</strong> {row[0]}<br><strong>Chat Bot :</strong> {row[1]}<br><br>",
                             unsafe_allow_html=True)
+
+            chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
             if user_question:
                 result = qa({"query": user_question})
@@ -192,6 +197,8 @@ def main():
 
                 # Commit the insert
                 conn.commit()
+                chat_history = f"<strong>User :</strong> {user_question}<br><strong>ChatBot :</strong> {result['result']}<br><br>" + chat_history
+                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
 
 if __name__ == '__main__':
