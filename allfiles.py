@@ -18,6 +18,14 @@ from langchain.prompts.chat import (
 from langchain.llms import AzureOpenAI
 import tiktoken
 import sqlite3
+import fitz  # PyMuPDF
+
+
+def translate(text, target_language='ko'):
+    # Use the translation API
+    # This function should return translated text
+    translated_text = text  # replace this with the translation API
+    return translated_text
 
 
 def main():
@@ -104,6 +112,8 @@ def main():
             )
             st.markdown(
                 f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
+            if st.button('Translate to Korean'):
+                translated_text = translate(result)
             # Insert the question and answer into the database
             c.execute("INSERT INTO chat_history VALUES (?,?)",
                       (user_input, response["choices"][0]["message"]["content"]))
@@ -128,10 +138,15 @@ def main():
 
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Reading the PDF...'):
-                    pdf_reader = PdfReader(uploaded_file)
+                    doc = fitz.open(
+                        stream=uploaded_file.read(), filetype='pdf')
                     text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text()
+                    for page in doc:
+                        text += page.get_text()
+                    # pdf_reader = PdfReader(uploaded_file)
+                    # text = ""
+                    # for page in pdf_reader.pages:
+                    #     text += page.extract_text()
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):

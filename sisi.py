@@ -21,6 +21,13 @@ import sqlite3
 import fitz  # PyMuPDF
 
 
+def translate(text, target_language='ko'):
+    # Use the translation API
+    # This function should return translated text
+    translated_text = text  # replace this with the translation API
+    return translated_text
+
+
 def main():
     # Establish a connection to the database (will create it if it doesn't exist)
     conn = sqlite3.connect('chat_history.db')
@@ -105,6 +112,8 @@ def main():
             )
             st.markdown(
                 f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
+            if st.button('Translate to Korean'):
+                translated_text = translate(result)
             # Insert the question and answer into the database
             c.execute("INSERT INTO chat_history VALUES (?,?)",
                       (user_input, response["choices"][0]["message"]["content"]))
