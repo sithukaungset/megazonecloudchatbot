@@ -18,6 +18,7 @@ from langchain.prompts.chat import (
 from langchain.llms import AzureOpenAI
 import tiktoken
 import sqlite3
+import fitz  # PyMuPDF
 
 
 def main():
@@ -128,10 +129,15 @@ def main():
 
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Reading the PDF...'):
-                    pdf_reader = PdfReader(uploaded_file)
+                    doc = fitz.open(
+                        stream=uploaded_file.read(), filetype='pdf')
                     text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text()
+                    for page in doc:
+                        text += page.get_text()
+                    # pdf_reader = PdfReader(uploaded_file)
+                    # text = ""
+                    # for page in pdf_reader.pages:
+                    #     text += page.extract_text()
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
