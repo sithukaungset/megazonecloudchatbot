@@ -20,6 +20,31 @@ import tiktoken
 import sqlite3
 import fitz  # PyMuPDF
 
+# Tabular data preprocessing
+
+
+class TabularDataProcessor:
+    def __init__(self, data):
+        self.data = data
+
+    def preprocess(self):
+        self.data = self.data.fillna('Unknown')  # Fill missing values
+        self.data = self.data.applymap(lambda s: s.lower() if type(
+            s) == str else s)  # convert text to lowercase
+
+    def transform_to_sentences(self):
+        # Create a list to store the sentences
+        sentences = []
+
+        # Iterate over each row in the DataFrame
+        for index, row in self.data.iterrows():
+            # Create a sentence for each row
+            sentence = ','.join(
+                [f'{col} is {val}' for col, val in row.items()])
+            sentences.append(sentence)
+
+        return sentences
+
 
 def translate(text, target_language='ko'):
     # Use the translation API
@@ -155,12 +180,18 @@ def main():
             elif file_details["FileType"] in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
                 with st.spinner('Reading the Excel file...'):
                     df = pd.read_excel(uploaded_file)
-                    text = " ".join(map(str, df.values))
+                    processor = TabularDataProcessor(df)
+                    processor.preprocess()
+                    # text = " ".join(map(str, df.values))
+                    text = ". ".join(processor.transform_to_sentences())
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
                     df = pd.read_csv(uploaded_file)
-                    text = " ".join(map(str, df.values))
+                    processor = TabularDataProcessor(df)
+                    processor.preprocess()
+                    # text = " ".join(map(str, df.values))
+                    text = ". ".join(processor.transform_to_sentences())
 
             else:
                 st.error("File type not supported.")
