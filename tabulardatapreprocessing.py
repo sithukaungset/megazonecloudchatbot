@@ -31,19 +31,56 @@ class TabularDataProcessor:
         self.data = self.data.fillna('Unknown')  # Fill missing values
         self.data = self.data.applymap(lambda s: s.lower() if type(
             s) == str else s)  # convert text to lowercase
+        self.data = self.format_data(self.data)  # format the data
 
     def transform_to_sentences(self):
-        # Create a list to store the sentences
-        sentences = []
-
-        # Iterate over each row in the DataFrame
-        for index, row in self.data.iterrows():
-            # Create a sentence for each row
-            sentence = ','.join(
-                [f'{col} is {val}' for col, val in row.items()])
-            sentences.append(sentence)
-
+        structured_sentences = self.structure_information(
+            self.data)  # structure the information
+        chunked_sentences = self.chunk_information(
+            self.data, chunk_size=5)  # chunk the information
+        sentences = structured_sentences + chunked_sentences  # concatenate the sentences
         return sentences
+
+    def format_data(self, df):
+        for col in df.columns:
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                # convert dates to 'YYYY-MM-DD' format
+                df[col] = df[col].dt.strftime('%Y-%m-%d')
+            elif pd.api.types.is_numeric_dtype(df[col]):
+                # format numbers to 2 decimal places
+                df[col] = df[col].apply(lambda x: f"{x:.2f}")
+        return df
+
+    def structure_information(self, df):
+        structured_sentences = []
+        for idx, row in df.iterrows():
+            sentence = f"In the record {idx+1}, "
+            sentence += ", ".join([f"the {col} is {val}" for col,
+                                  val in row.items()])
+            structured_sentences.append(sentence)
+        return structured_sentences
+
+    def include_metadata(self, df, sheet_name):
+        headers = "".join(df.columns)
+        metadata_info = f"The sheet {sheet_name} includes the following headers: {headers}. "
+        return metadata_info
+
+    def highlight_keywords(self, sentence, keywords):
+        for keyword in keywords:
+            sentence = sentence.replace(keyword, f"*{keyword}*")
+
+        return sentence
+
+    def chunk_information(self, df, chunk_size):
+        chunked_sentences = []
+        columns = df.columns.tolist()
+        for idx in range(0, len(columns), chunk_size):
+            chunked_df = df[columns[idx:idx + chunk_size]]
+            for idx in range(0, len(columns), chunk_size):
+                chunked_df = df[columns[idx:idx + chunk_size]]
+                chunked_sentences.extend(
+                    self.structure_information(chunked_df))
+            return chunked_sentences
 
 
 def translate(text, target_language='ko'):
@@ -179,19 +216,39 @@ def main():
 
             elif file_details["FileType"] in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
                 with st.spinner('Reading the Excel file...'):
-                    df = pd.read_excel(uploaded_file)
-                    processor = TabularDataProcessor(df)
-                    processor.preprocess()
-                    # text = " ".join(map(str, df.values))
-                    text = ". ".join(processor.transform_to_sentences())
+                    # df = pd.read_excel(uploaded_file)
+                    # read all sheets into a dict
+                    dfs = pd.read_excel(uploaded_file, sheet_name=None)
+                    all_sentences = []  # list to hold sentences from all sheets
+                    for sheet_name, df in dfs.items():  # iterate over each sheet
+                        processor = TabularDataProcessor(df)
+                        processor.preprocess()
+                        sentences = processor.transform_to_sentences()
+                        # add sentence from current sheet to list
+                        all_sentences.extend(sentences)
+                        # text = " ".join(map(str, df.values))
+                    # concatenate all sentences with a period separator
+                    text = ". ".join(all_sentences)
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
                     df = pd.read_csv(uploaded_file)
                     processor = TabularDataProcessor(df)
                     processor.preprocess()
+                    sentences = processor.transform_to_sentences()
                     # text = " ".join(map(str, df.values))
-                    text = ". ".join(processor.transform_to_sentences())
+                    text = ". ".join(sentences)
+
+            # elif file_details["FileType"] in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
+            #     with st.spinner('Reading the Excel file...'):
+            #         xls = pd.ExcelFile(uploaded_file)
+            #         sheet_names = xls.sheet_names
+            #         selected_sheet = st.selectbox(
+            #             "Select Excel Sheet", sheet_names)
+            #         df = pd.read_excel(xls, sheet_name=selected_sheet)
+            #         processor = TabularDataProcessor(df)
+            #         processor.preprocess()
+            #         text = ". ".join(processor.transform_to_sentences())
 
             else:
                 st.error("File type not supported.")

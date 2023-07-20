@@ -45,6 +45,29 @@ class TabularDataProcessor:
 
         return sentences
 
+    def get_num_sheets(self, excel_file):
+        # Get the number of sheets in the excel file
+        return len(excel_file.sheet_names)
+
+    def get_sheet_names(self, excel_file):
+        # Get the name of the sheets in the excel file
+        return excel_file.sheet_names
+
+    def process_all_sheets(self, excel_file):
+        # Initialize text
+        text = ""
+
+        # Iterate over all sheets in the excel file
+        for sheet in excel_file.sheet_names:
+            df = pd.read_excel(excel_file, sheet_name=sheet)
+
+            # Process the data in the sheet
+            self.data = df
+            self.preprocess()
+            text += " .".join(self.transform_to_sentences()) + ". "
+
+        return text
+
 
 def translate(text, target_language='ko'):
     # Use the translation API
@@ -179,11 +202,31 @@ def main():
 
             elif file_details["FileType"] in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
                 with st.spinner('Reading the Excel file...'):
-                    df = pd.read_excel(uploaded_file)
-                    processor = TabularDataProcessor(df)
-                    processor.preprocess()
-                    # text = " ".join(map(str, df.values))
-                    text = ". ".join(processor.transform_to_sentences())
+                    excel_file = pd.ExcelFile(uploaded_file)
+
+                    # text = process_all_sheets(excel_file)
+                    # Create an instance of TabularDataProcessor
+                    processor = TabularDataProcessor(None)
+                    # df = pd.read_excel(uploaded_file)
+
+                    # Get the number of sheets and their names
+                    num_sheets = processor.get_num_sheets(excel_file)
+                    sheet_names = processor.get_sheet_names(excel_file)
+
+                    # sheet_names = excel_file.sheet_names
+
+                    st.write(f"Number of sheets: {num_sheets}")
+                    st.write(f"Sheet Names: {sheet_names}")
+
+                    text = processor.process_all_sheets(excel_file)
+
+                    # for sheet in sheet_names:
+                    #     df = pd.read_excel(excel_file, sheet_name=sheet)
+                    #     processor.data = df  # Set the data for the processor
+                    #     processor.preprocess()
+                    #     # text = " ".join(map(str, df.values))
+                    #     text = ". ".join(
+                    #         processor.transform_to_sentences()) + ""
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
