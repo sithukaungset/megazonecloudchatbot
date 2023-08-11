@@ -11,4 +11,6 @@ xlrd==2.0.1
 tiktoken
 PyMuPDF
 pytesseract==0.3.8
-
+pdfminer
+pdf2image
+re
