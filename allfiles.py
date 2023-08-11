@@ -19,7 +19,14 @@ from langchain.llms import AzureOpenAI
 import tiktoken
 import sqlite3
 import fitz  # PyMuPDF
-
+import pytesseract
+from pdfminer.high_level import extract_text
+from pdf2image import convert_from_path
+import re
+# import cv2
+import base64
+import requests
+import json
 # Tabular data preprocessing
 
 
@@ -29,6 +36,8 @@ class TabularDataProcessor:
 
     def preprocess(self):
         self.data = self.data.fillna('Unknown')  # Fill missing values
+        # apply the preprocess_math_expression on possible mathematical strings
+        self.data = self.data.applymap(self.preprocess_math_expression)
         self.data = self.data.applymap(lambda s: s.lower() if type(
             s) == str else s)  # convert text to lowercase
 
@@ -67,6 +76,98 @@ class TabularDataProcessor:
             text += " .".join(self.transform_to_sentences()) + ". "
 
         return text
+
+    # MATHPIX_ENDPOINT = "https://api.mathpix.com/v3/text"
+    # MATHPIX_HEADERS = {
+    #     "app_id": "MY_APP_ID",
+    #     "app_key": "MY_APP_KEY",
+    #     "Content-type": "application/json"
+    # }
+
+    # def ocr_with_mathpix(self, image):
+    #     """
+    #     Use Mathpix API to extract text from the given image.
+    #     """
+    #     # Convert the image to a base64 string
+    #     _, img_encoded = cv2.imencode('.png', image)
+    #     img_str = base64.b64encode(img_encoded).decode('utf-8')
+
+    #     # Create payload for API request
+    #     payload = {
+    #         "src": f"data:image/png;base64, {img_str}"
+    #     }
+    #     response = requests.post(
+    #         self.MATHPIX_ENDPOINT, headers=self.MATHPIX_HEADERS, data=json.dumps(payload))
+    #     response_data = response.json()
+
+    #     # Extract text from the response, handle errors appropriately
+    #     return response_data('text', '')
+
+    # def ocr_pdf(self, pdf_path):
+    #     """
+    #     Convert a PDF into images and then use Mathpix to extract text.
+    #     Return the combined text from all pages.
+    #     """
+
+    #     # Convert PDF to a list of images
+    #     images = convert_from_path(pdf_path)
+
+    #     # OCR each image to extract text using Mathpix
+    #     texts = [self.ocr_with_mathpix(img) for img in images]
+
+    #     # Combine the texts from all pages
+    #     combined_text = "/n".join(texts)
+
+    #     return combined_text
+
+    def ocr_pdf(self, pdf_path):
+        """ 
+        Convert a PDF into images and then use OCR to extract text.
+        Return the combined text from all pages.
+        """
+
+        # Convert PDF to a list of images
+        images = convert_from_path(pdf_path)
+
+        # OCR each image to extract text
+        texts = [pytesseract.image_to_string(img) for img in images]
+
+        # Combine the texts from all pages
+        combined_text = "/n".join(texts)
+
+        return combined_text
+
+    def process_pdf(self, pdf_path):
+        """
+        Process a PDF file using OCR and then preprocess any potential mathematical expressions.
+        """
+        # Extract text from the PDF using OCR
+        ocr_text = self.ocr_pdf(pdf_path)
+
+        # Split the OCR text into lines and preprocess each line individually
+        preprocessed_lines = [self.preprocess_math_expression(
+            line) for line in ocr_text.split("n")]
+
+        # Combined the preprocessed lines back into a single string
+        preprocessed_text = "\n".join(preprocessed_lines)
+
+        return preprocessed_text
+
+    def preprocess_math_expression(self, expression):
+        # Check if the input is a string, if not, return as is
+        if not isinstance(expression, str):
+            return expression
+
+        # Remove any extra spaces
+        expression = expression.lower().strip()
+
+        # Add spaces around operators for better tokenization
+        expression = re.sub(r'(\+|\-|\*|\/|\=|\(|\))', r' \1 ', expression)
+
+        # Remove any extra spaces around numbers and variables
+        expression = re.sub(r'/s+', ' ', expression).strip()
+
+        return expression
 
 
 def translate(text, target_language='ko'):
