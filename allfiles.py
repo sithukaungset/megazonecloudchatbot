@@ -332,14 +332,18 @@ def main():
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
+        
+                     # Read the CSV file into Dataframe
+                    df = pd.read_csv(uploaded_file)
                     
-                    # Read the CSV file into Dataframe
-                    csv_file = pd.read_csv(uploaded_file)
+                    # Initialize TabularDataProcessor with the DataFrame
+                    processor = TabularDataProcessor(df)
 
-                    processor = TabularDataProcessor(None)
-                    # df = pd.read_excel(uploaded_file)
-                               
-                    text = processor.process_all_sheets(csv_file)
+                    # Preprocess the data
+                    processor.preprocess()
+
+                    # Transform the DataFrame to sentences and join them
+                    text = ". ".join(processor.transform_to_sentences())
             else:
                 st.error("File type not supported.")
 
