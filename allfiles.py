@@ -333,21 +333,18 @@ def main():
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
                     
-                    # Create an instance of TabularDataProcessor
-                    processor = TabularDataProcessor(None)
-                    
                     # Read the CSV file into Dataframe
                     df = pd.read_csv(uploaded_file)
-                    
-                    # Set the dataframe in processor
-                    processor.process_all_sheets(df)
 
+                    # Create an instance of TabularDataProcessor
+                    processor = TabularDataProcessor(df)
+                    
                     # Preprocess the DataFrame
                     processor.preprocess()
 
                     # Get the metadata to display
-                    num_rows, num_columns = processor.get_shape()
-                    column_names = processor.get_column_names()
+                    num_rows, num_columns = df.shape
+                    column_names = df.columns.tolist()
 
                     # Display metadata
                     st.write(f"Number of rows: {num_rows}")
