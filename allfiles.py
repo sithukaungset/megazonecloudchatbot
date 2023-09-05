@@ -340,7 +340,7 @@ def main():
                     df = pd.read_csv(uploaded_file)
                     
                     # Set the dataframe in processor
-                    processor.set_dataframe(df)
+                    processor.process_all_sheets(df)
 
                     # Preprocess the DataFrame
                     processor.preprocess()
