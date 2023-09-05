@@ -332,12 +332,30 @@ def main():
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
+                    
+                    # Create an instance of TabularDataProcessor
+                    processor = TabularDataProcessor(None)
+                    
+                    # Read the CSV file into Dataframe
                     df = pd.read_csv(uploaded_file)
-                    processor = TabularDataProcessor(df)
-                    processor.preprocess()
-                    # text = " ".join(map(str, df.values))
-                    text = ". ".join(processor.transform_to_sentences())
+                    
+                    # Set the dataframe in processor
+                    processor.set_dataframe(df)
 
+                    # Preprocess the DataFrame
+                    processor.preprocess()
+
+                    # Get the metadata to display
+                    num_rows, num_columns = processor.get_shape()
+                    column_names = processor.get_column_names()
+
+                    # Display metadata
+                    st.write(f"Number of rows: {num_rows}")
+                    st.write(f"Number of columns: {num_columns}")
+                    st.write(f"Column Names: {column_names}")
+
+                    # Transform the DataFrame to sentences and join them
+                    text = ". ".join(processor.transform_to_sentences())
             else:
                 st.error("File type not supported.")
 
