@@ -334,25 +334,21 @@ def main():
                 with st.spinner('Reading the CSV file...'):
                     
                     # Read the CSV file into Dataframe
-                    df = pd.read_csv(uploaded_file)
+                    csv_file = pd.read_csv(uploaded_file)
 
-                    # Create an instance of TabularDataProcessor
-                    processor = TabularDataProcessor(df)
-                    
-                    # Preprocess the DataFrame
-                    processor.preprocess()
+                    processor = TabularDataProcessor(None)
+                    # df = pd.read_excel(uploaded_file)
 
-                    # Get the metadata to display
-                    num_rows, num_columns = df.shape
-                    column_names = df.columns.tolist()
+                    # Get the number of sheets and their names
+                    num_sheets = processor.get_num_sheets(csv_file)
+                    sheet_names = processor.get_sheet_names(csv_file)
 
-                    # Display metadata
-                    st.write(f"Number of rows: {num_rows}")
-                    st.write(f"Number of columns: {num_columns}")
-                    st.write(f"Column Names: {column_names}")
+                    # sheet_names = excel_file.sheet_names
 
-                    # Transform the DataFrame to sentences and join them
-                    text = ". ".join(processor.transform_to_sentences())
+                    st.write(f"Number of sheets: {num_sheets}")
+                    st.write(f"Sheet Names: {sheet_names}")
+
+                    text = processor.process_all_sheets(csv_file)
             else:
                 st.error("File type not supported.")
 
