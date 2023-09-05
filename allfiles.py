@@ -338,16 +338,7 @@ def main():
 
                     processor = TabularDataProcessor(None)
                     # df = pd.read_excel(uploaded_file)
-
-                    # Get the number of sheets and their names
-                    num_sheets = processor.get_num_sheets(csv_file)
-                    sheet_names = processor.get_sheet_names(csv_file)
-
-                    # sheet_names = excel_file.sheet_names
-
-                    st.write(f"Number of sheets: {num_sheets}")
-                    st.write(f"Sheet Names: {sheet_names}")
-
+                               
                     text = processor.process_all_sheets(csv_file)
             else:
                 st.error("File type not supported.")
