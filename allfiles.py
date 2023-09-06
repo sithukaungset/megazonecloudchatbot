@@ -341,7 +341,7 @@ def main():
                     #     text = ". ".join(
                     #         processor.transform_to_sentences()) + ""
 
-            elif file_details["FileType"] == "text/csv":
+            elif file_details["FileType"] == "application/csv":
                 with st.spinner('Reading the CSV file...'):
         
                     # Create an instance of TabularDataProcessor
