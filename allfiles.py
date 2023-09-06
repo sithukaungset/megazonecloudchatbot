@@ -341,12 +341,21 @@ def main():
                     #     text = ". ".join(
                     #         processor.transform_to_sentences()) + ""
 
-            elif file_details["FileType"] == "application/csv":
+            elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
         
                     # Create an instance of TabularDataProcessor
                     processor = TabularDataProcessor(None)
-                    text = processor.process_csv(uploaded_file)
+                    
+                    # Read the CSV file into a DataFrame
+                    df = pd.read_csv(uploaded_file)
+                    
+                    # Set the data for the processor and preprocess it
+                    processor.data = df
+                    processor.preprocess()
+                    
+                    # Transform the data into sentences
+                    text = ". ".join(processor.transform_to_sentences()) + "."
             else:
                 st.error("File type not supported.")
 
