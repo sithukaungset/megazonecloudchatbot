@@ -77,16 +77,6 @@ class TabularDataProcessor:
             text += " .".join(self.transform_to_sentences()) + ". "
 
         return text
-    
-    def process_csv(self, csv_path):
-        """
-        Process a CSV file and return the transformed sentences.
-        """
-        df = pd.read_csv(csv_path)
-        self.data = df
-        self.preprocess()
-        text = " .".join(self.transform_to_sentences()) + ". "
-        return text
 
 
     # MATHPIX_ENDPOINT = "https://api.mathpix.com/v3/text"
@@ -343,19 +333,9 @@ def main():
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
-        
-                    # Create an instance of TabularDataProcessor
-                    processor = TabularDataProcessor(None)
                     
-                    # Read the CSV file into a DataFrame
                     df = pd.read_csv(uploaded_file)
-                    
-                    # Set the data for the processor and preprocess it
-                    processor.data = df
-                    processor.preprocess()
-                    
-                    # Transform the data into sentences
-                    text = ". ".join(processor.transform_to_sentences()) + "."
+                    text = " ".join(map(str, df.values))
             else:
                 st.error("File type not supported.")
 
