@@ -42,18 +42,52 @@ class TabularDataProcessor:
         self.data = self.data.applymap(lambda s: s.lower() if type(
             s) == str else s)  # convert text to lowercase
 
+    # def transform_to_sentences(self):
+    #     # Create a list to store the sentences
+    #     sentences = []
+
+    #     # Iterate over each row in the DataFrame
+    #     for index, row in self.data.iterrows():
+    #         # Create a sentence for each row
+    #         sentence = ','.join(
+    #             [f'{col} is {val}' for col, val in row.items()])
+    #         sentences.append(sentence)
+
+    #     return sentences
+    
     def transform_to_sentences(self):
         # Create a list to store the sentences
         sentences = []
 
+        # Define a dictionary for column descriptions
+        column_descriptions = {
+            'age': 'The age of the individual',
+            'first_name': 'The first name',
+            'last_name': 'The last name',
+            # ... add more descriptions as needed
+        }
+
         # Iterate over each row in the DataFrame
         for index, row in self.data.iterrows():
-            # Create a sentence for each row
-            sentence = ','.join(
-                [f'{col} is {val}' for col, val in row.items()])
+            sentence_parts = []
+            
+            # Handle specific combined cases
+            if 'first_name' in row and 'last_name' in row:
+                sentence_parts.append(f"The individual's name is {row['first_name']} {row['last_name']}")
+            else:
+                for col, val in row.items():
+                    if col in column_descriptions:
+                        sentence_parts.append(f"{column_descriptions[col]} is {val}")
+                    else:
+                        # Default behavior if no special description is found
+                        sentence_parts.append(f"{col} is {val}")
+            
+            # Combine all parts for the current row to form a complete sentence
+            sentence = '. '.join(sentence_parts)
             sentences.append(sentence)
 
         return sentences
+
 
     def get_num_sheets(self, excel_file):
         # Get the number of sheets in the excel file
