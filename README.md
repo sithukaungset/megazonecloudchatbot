@@ -61,9 +61,6 @@ The code comprises multiple modules, each responsible for specific functionaliti
 - Placeholder code hints at potential future features.
 - The database connection doesn't have a clear closing mechanism.
 
-## Schematic Diagram
-
-For visual representation, consider using tools like Lucidchart, draw.io, or Microsoft Visio. This README doesn't provide actual diagrams but offers guidance on creating them.
 
 ## Contributing
 
