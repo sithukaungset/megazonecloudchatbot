@@ -14,3 +14,4 @@ pytesseract==0.3.8
 pdfminer
 pdf2image
 pdfminer.six
+requests

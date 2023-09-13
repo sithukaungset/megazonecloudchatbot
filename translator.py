@@ -19,6 +19,232 @@ from langchain.llms import AzureOpenAI
 import tiktoken
 import sqlite3
 import fitz  # PyMuPDF
+import pytesseract
+from pdfminer.high_level import extract_text
+from pdf2image import convert_from_path
+import re
+# import cv2
+# import base64
+import requests
+import json
+
+AZURE_TRANSLATE_ENDPOINT = "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0"
+AZURE_KEY = "f33fa5e2251d4f178e258c1bf26d069d"
+
+def translatete(text, target_language='ko'):
+    headers = {
+        "Ocp-Apim-Subscription-Key": AZURE_KEY,
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Region": "global",  
+    }
+
+    body = [{
+        'text': text
+    }]
+
+    params = {
+        "to": target_language
+    }
+    
+
+# Tabular data preprocessing
+
+
+class TabularDataProcessor:
+    def __init__(self, data):
+        self.data = data
+
+    def preprocess(self):
+        self.data = self.data.fillna('Unknown')  # Fill missing values
+        # apply the preprocess_math_expression on possible mathematical strings
+        self.data = self.data.applymap(self.preprocess_math_expression)
+        self.data = self.data.applymap(lambda s: s.lower() if type(
+            s) == str else s)  # convert text to lowercase
+
+    # def transform_to_sentences(self):
+    #     # Create a list to store the sentences
+    #     sentences = []
+
+    #     # Iterate over each row in the DataFrame
+    #     for index, row in self.data.iterrows():
+    #         # Create a sentence for each row
+    #         sentence = ','.join(
+    #             [f'{col} is {val}' for col, val in row.items()])
+    #         sentences.append(sentence)
+
+    #     return sentences
+    
+    def transform_to_sentences(self):
+        # Create a list to store the sentences
+        sentences = []
+
+        # Define a dictionary for column descriptions
+        column_descriptions = {
+            'age': 'The age of the individual',
+            'first_name': 'The first name',
+            'last_name': 'The last name',
+            # ... add more descriptions as needed
+        }
+
+        # Iterate over each row in the DataFrame
+        for index, row in self.data.iterrows():
+            sentence_parts = []
+            
+            # Handle specific combined cases
+            if 'first_name' in row and 'last_name' in row:
+                sentence_parts.append(f"The individual's name is {row['first_name']} {row['last_name']}")
+            else:
+                for col, val in row.items():
+                    if col in column_descriptions:
+                        sentence_parts.append(f"{column_descriptions[col]} is {val}")
+                    else:
+                        # Default behavior if no special description is found
+                        sentence_parts.append(f"{col} is {val}")
+            
+            # Combine all parts for the current row to form a complete sentence
+            sentence = '. '.join(sentence_parts)
+            sentences.append(sentence)
+
+        return sentences
+
+
+    def get_num_sheets(self, excel_file):
+        # Get the number of sheets in the excel file
+        return len(excel_file.sheet_names)
+
+    def get_sheet_names(self, excel_file):
+        # Get the name of the sheets in the excel file
+        return excel_file.sheet_names
+
+    def process_all_sheets(self, excel_file):
+        # Initialize text
+        text = ""
+
+        # Iterate over all sheets in the excel file
+        for sheet in excel_file.sheet_names:
+            df = pd.read_excel(excel_file, sheet_name=sheet)
+
+            # Process the data in the sheet
+            self.data = df
+            self.preprocess()
+            text += " .".join(self.transform_to_sentences()) + ". "
+
+        return text
+
+    def extract_text_from_pdf(self, pdf_stream):
+        """
+        Extract text from a pdf file stream using the fitz (PyMuPDF) library.
+        Return the combined text from all pages.
+        """
+
+        doc = fitz.open(stream=pdf_stream, filetype='pdf')
+        text = ''
+        for page in doc:
+            text += page.get_text()
+
+        return text
+    
+    def process_pdf_stream(self, pdf_stream):
+        """
+        Process a PDF stream and return the extracted text.
+        """
+        # Extract text from the pdf usign fitz
+        text = self.extract_text_from_pdf(pdf_stream)
+
+        # For now, this function just returns the extracted text. but additional processsing 
+
+
+    # MATHPIX_ENDPOINT = "https://api.mathpix.com/v3/text"
+    # MATHPIX_HEADERS = {
+    #     "app_id": "MY_APP_ID",
+    #     "app_key": "MY_APP_KEY",
+    #     "Content-type": "application/json"
+    # }
+
+    # def ocr_with_mathpix(self, image):
+    #     """
+    #     Use Mathpix API to extract text from the given image.
+    #     """
+    #     # Convert the image to a base64 string
+    #     _, img_encoded = cv2.imencode('.png', image)
+    #     img_str = base64.b64encode(img_encoded).decode('utf-8')
+
+    #     # Create payload for API request
+    #     payload = {
+    #         "src": f"data:image/png;base64, {img_str}"
+    #     }
+    #     response = requests.post(
+    #         self.MATHPIX_ENDPOINT, headers=self.MATHPIX_HEADERS, data=json.dumps(payload))
+    #     response_data = response.json()
+
+    #     # Extract text from the response, handle errors appropriately
+    #     return response_data('text', '')
+
+    # def ocr_pdf(self, pdf_path):
+    #     """
+    #     Convert a PDF into images and then use Mathpix to extract text.
+    #     Return the combined text from all pages.
+    #     """
+
+    #     # Convert PDF to a list of images
+    #     images = convert_from_path(pdf_path)
+
+    #     # OCR each image to extract text using Mathpix
+    #     texts = [self.ocr_with_mathpix(img) for img in images]
+
+    #     # Combine the texts from all pages
+    #     combined_text = "/n".join(texts)
+
+    #     return combined_text
+
+    def ocr_pdf(self, pdf_path):
+        """ 
+        Convert a PDF into images and then use OCR to extract text.
+        Return the combined text from all pages.
+        """
+
+        # Convert PDF to a list of images
+        images = convert_from_path(pdf_path)
+
+        # OCR each image to extract text
+        texts = [pytesseract.image_to_string(img) for img in images]
+
+        # Combine the texts from all pages
+        combined_text = "/n".join(texts)
+
+        return combined_text
+
+    def process_pdf(self, pdf_path):
+        """
+        Process a PDF file using OCR and then preprocess any potential mathematical expressions.
+        """
+        # Extract text from the PDF using OCR
+        ocr_text = self.ocr_pdf(pdf_path)
+
+        # Split the OCR text into lines and preprocess each line individually
+        preprocessed_lines = [self.preprocess_math_expression(
+            line) for line in ocr_text.split("n")]
+
+        # Combined the preprocessed lines back into a single string
+        preprocessed_text = "\n".join(preprocessed_lines)
+
+        return preprocessed_text
+
+    def preprocess_math_expression(self, expression):
+        # Check if the input is a string, if not, return as is
+        if not isinstance(expression, str):
+            return expression
+
+        # Remove any extra spaces
+        expression = expression.lower().strip()
+
+        # Add spaces around operators for better tokenization
+        expression = re.sub(r'(\+|\-|\*|\/|\=|\(|\))', r' \1 ', expression)
+
+        # Remove any extra spaces around numbers and variables
+        expression = re.sub(r'/s+', ' ', expression).strip()
+
+        return expression
 
 
 def translate(text, target_language='ko'):
@@ -154,14 +380,37 @@ def main():
 
             elif file_details["FileType"] in ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]:
                 with st.spinner('Reading the Excel file...'):
-                    df = pd.read_excel(uploaded_file)
-                    text = " ".join(map(str, df.values))
+                    excel_file = pd.ExcelFile(uploaded_file)
+
+                    # text = process_all_sheets(excel_file)
+                    # Create an instance of TabularDataProcessor
+                    processor = TabularDataProcessor(None)
+                    # df = pd.read_excel(uploaded_file)
+
+                    # Get the number of sheets and their names
+                    num_sheets = processor.get_num_sheets(excel_file)
+                    sheet_names = processor.get_sheet_names(excel_file)
+
+                    # sheet_names = excel_file.sheet_names
+
+                    st.write(f"Number of sheets: {num_sheets}")
+                    st.write(f"Sheet Names: {sheet_names}")
+
+                    text = processor.process_all_sheets(excel_file)
+
+                    # for sheet in sheet_names:
+                    #     df = pd.read_excel(excel_file, sheet_name=sheet)
+                    #     processor.data = df  # Set the data for the processor
+                    #     processor.preprocess()
+                    #     # text = " ".join(map(str, df.values))
+                    #     text = ". ".join(
+                    #         processor.transform_to_sentences()) + ""
 
             elif file_details["FileType"] == "text/csv":
                 with st.spinner('Reading the CSV file...'):
+                    
                     df = pd.read_csv(uploaded_file)
                     text = " ".join(map(str, df.values))
-
             else:
                 st.error("File type not supported.")
 
@@ -218,5 +467,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
