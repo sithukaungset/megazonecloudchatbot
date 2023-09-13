@@ -87,13 +87,18 @@ class PDFProcessor:
     def remove_headers_and_footers(self, text):
         # A very basic method: remove the first and last line from each page, assuming they might be headers/footers.
         # This might need more advanced logic, possibly using patterns or machine learning models.
+        # Split text into pages
+        pages = text.split("\n\n")
+        # For each page, remove the first and last lines if they exist
         cleaned_pages = []
-        for page in text.split("\n\n"):
+        for page in pages:
             lines = page.split('\n')
-            if len(lines) > 1:
-                cleaned_pages.append("\n".join(lines[1:-1]))
-            else:
-                cleaned_pages.append("\n".join(lines))
+            # Check if the page has more than 2 lines, if so, remove the first and last lines.
+            # Otherwise, just use the lines as they are.
+            cleaned_page = lines[1:-1] if len(lines) > 2 else lines
+            cleaned_pages.append("\n".join(cleaned_page))
+
+        # Join the cleaned pages back into a single text
         cleaned_text = "\n".join(cleaned_pages)
         return cleaned_text
         
