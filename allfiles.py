@@ -437,10 +437,8 @@ def main():
                 with st.spinner('Processing the PDF...'):
                     # Using the process_pdf_stream method to extract and segment text from the PDF
                     segments = pdf_processor.process_pdf_stream(uploaded_file.read())
-            
-                    for section, content in segments.items():
-                        if content:
-                            st.write(f"{section.capitalize()}:\n{content}\n")
+                    # Assuming you want the combined content for the user to ask questions about
+                    text = "\n".join(segments.values())
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
