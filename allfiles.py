@@ -103,7 +103,7 @@ class PDFProcessor:
         return cleaned_text
         
 
-    def enhanced_segment_content(text):
+    def enhanced_segment_content(self,text):
         # Define potential section headers and their variations
         sections = {
             "introduction": ["introduction", "intro", "background"],
