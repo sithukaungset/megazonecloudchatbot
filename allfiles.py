@@ -458,7 +458,7 @@ def main():
                     for section, content in segments.items():
                         if content:
                             st.write(f"{section.capitalize()}:\n{content}\n")
-                    text = segments
+                    text = "\n".join(segments.values())
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
