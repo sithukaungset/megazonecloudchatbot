@@ -470,9 +470,9 @@ def main():
                     # Using the process_pdf_stream method to extract and segment text from the PDF
                     segments = pdf_processor.process_pdf_stream(uploaded_file.read())
             
-                    for section, content in segments.items():
-                        if content:
-                            st.write(f"{section.capitalize()}:\n{content}\n")
+                    # for section, content in segments.items():
+                    #     if content:
+                    #         st.write(f"{section.capitalize()}:\n{content}\n")
                     text = "\n".join(segments.values())
 
             elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
