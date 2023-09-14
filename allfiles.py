@@ -15,6 +15,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
+from pptx import Presentation
 from langchain.llms import AzureOpenAI
 import tiktoken
 import sqlite3
@@ -28,6 +29,20 @@ import base64
 import requests
 import json
 
+
+# Powerpoint Processor
+class PowerPointProcessor:
+
+    def extract_text_from_ppt(self, ppt_stream):
+        prs = Presentation(ppt_stream)
+        text = ""
+
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    text += shape.text + "\n"
+
+        return text.strip() # return text, removing extra spaces
 
 # PDF Processor
 class PDFProcessor:
@@ -442,7 +457,7 @@ def main():
         pdf_processor = PDFProcessor()
         # upload file
         uploaded_file = st.file_uploader("Upload your file", type=[
-            "pdf", "csv", "txt", "xlsx", "xls"])
+            "pdf", "csv", "txt", "xlsx", "xls", "ppt", "pptx"])
 
         # extract the text
         if uploaded_file is not None:
@@ -460,6 +475,12 @@ def main():
                             st.write(f"{section.capitalize()}:\n{content}\n")
                     text = "\n".join(segments.values())
 
+            elif file_details["FileType"] in ["application/vnds.ms-powerpoint", "application/vnd.openxmlformats-officedocuments.presentationml.presentation"]:
+                with st.spinner('Reading the PowerPoint file...'):
+                    # Create an instance of the Powerpoint Processor
+                    ppt_processor = PowerPointProcessor()
+                    text = ppt_processor.extract_text_from_ppt(uploaded_file)
+                    
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
                     text = uploaded_file.read().decode("utf-8")
