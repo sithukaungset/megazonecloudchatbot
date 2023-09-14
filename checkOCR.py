@@ -103,57 +103,40 @@ class PDFProcessor:
         return cleaned_text
         
 
-    def enhanced_segment_content(self, text):
-        # Define potential section headers and their variations
-        sections = {
-            "introduction": ["introduction", "intro", "background"],
-            "methods": ["methods", "methodology", "experimental", "experiment","materials and methods"],
-            "results": ["results","findings", "outcome"],
-            "discussion": ["discussion","analysis"],
-            "references": ["references", "bibliography","citations"],
-            "acknowledgments": ["acknowledgments", "acknowledgement","thanks","gratitude"]
+    def segment_content(self, text):
+        # Example segmentation - you can further enhance this
+        segments = {
+            "introduction": None,
+            "methods": None,
+            "results": None,
+            "discussion": None,
+            "references": None
         }
 
-        segments = {key: None for key in sections.keys()}
-    
-        # Convert the text to lower case for case insensitive search
-        lower_text = text.lower()
-        
-        # For each section, find the starting index using its potential headers
-        indices = {}
-        for section, patterns in sections.items():
-            indices[section] = float('inf')  # initialize with "infinity"
-            for pattern in patterns:
-                idx = lower_text.find(pattern)
-                if idx != -1 and idx < indices[section]:  # Update with the smallest index found
-                    indices[section] = idx
-                    
-        # Sort sections by their starting index
-        sorted_sections = sorted(indices.items(), key=lambda x: x[1])
-        
-        # Extract content for each section based on the detected starting indices
-        for i, (section, start_idx) in enumerate(sorted_sections):
-            if start_idx == float('inf'):  # If section was not found
-                continue
-            
-            # Set end index to start of next section or end of text
-            end_idx = sorted_sections[i+1][1] if i+1 < len(sorted_sections) else len(text)
-            segments[section] = text[start_idx:end_idx].strip()
-        
+        # Split based on some common section titles. This is simplistic and might not work for all papers.
+        for section in segments.keys():
+            start_idx = text.lower().find(section)
+            if start_idx != -1:
+                end_idx = text.find("\n\n", start_idx)
+                segments[section] = text[start_idx:end_idx].strip()
+
         return segments
-    
+
     def process_pdf_stream(self, pdf_stream):
         # Extract text from the PDF using fitz
         text = self.extract_text_from_pdf(pdf_stream)
-
+        
         # Remove headers and footers
         text = self.remove_headers_and_footers(text)
-
-        # Segment content using the enhanced method
-        segments =self.enhanced_segment_content(text)
-
+        
+        # Segment content
+        segments = self.segment_content(text)
+        
         return segments
 
+
+        
+        
 
 # Tabular data preprocessing
  
@@ -458,7 +441,6 @@ def main():
                     for section, content in segments.items():
                         if content:
                             st.write(f"{section.capitalize()}:\n{content}\n")
-                    text = segments
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
