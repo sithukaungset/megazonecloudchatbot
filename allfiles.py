@@ -475,12 +475,12 @@ def main():
                             st.write(f"{section.capitalize()}:\n{content}\n")
                     text = "\n".join(segments.values())
 
-            elif file_details["FileType"] in ["application/vnds.ms-powerpoint", "application/vnd.openxmlformats-officedocuments.presentationml.presentation"]:
+            elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
                 with st.spinner('Reading the PowerPoint file...'):
                     # Create an instance of the Powerpoint Processor
                     ppt_processor = PowerPointProcessor()
                     text = ppt_processor.extract_text_from_ppt(uploaded_file)
-                    
+
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
                     text = uploaded_file.read().decode("utf-8")
