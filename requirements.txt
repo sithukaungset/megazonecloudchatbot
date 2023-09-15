@@ -16,3 +16,4 @@ pdf2image
 pdfminer.six
 requests
 python-pptx
+sympy

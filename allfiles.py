@@ -28,6 +28,7 @@ import re
 import base64
 import requests
 import json
+import sympy as sp
 
 
 # Powerpoint Processor
@@ -157,6 +158,59 @@ class PDFProcessor:
         
         return segments
     
+
+    # Mathematical Section for preprocessing Maths related texts
+
+    def identify_math_expressions(self, text):
+        """
+        A simple function to identity mathematical expressions.
+        This is a very basic way to identify mathematical content using the presence of '='
+        Depending on our needs, this might need to be refined.
+        """
+        math_expressions = []
+        for line in text.split('\n'):
+            if '=' in line:
+                math_expressions.append(line)
+            return math_expressions
+        
+    def process_math_expressions(self, math_expressions):
+        """
+        Process the identified mathematical expressions using Azure OCR or any other processing methods
+        
+        1. Evaluation, 2. Simplication, 3. Transcription to LaTex"""
+        processed_expressions = {}
+    
+        for expression in math_expressions:
+            print(expression)
+            expression_data = {}
+
+            # Evaluation
+            try: 
+                expression_data["evaluated"] = sp.sympify(expression).evalf()
+            except Exception as e:
+                expression_data["evaluated"] = str(e)
+
+            # Simplification
+            try:
+                expression_data["simplified"] = sp.sympify(expression).simplify()
+            except Exception as e:
+                expression_data["simplified"] = str(e)
+
+            # Transcription to Latex
+            try:
+                expression_data["latex"] = sp.latex(sp.sympify(expression))
+            except Exception as e:
+                expression_data["latex"] = str(e)
+
+            processed_expressions[expression] = expression_data
+        
+        return processed_expressions
+    
+    # Now when we call 'process math expressions', it will return a dictionary with each original
+    # expression as the key.The value for each key will be another dictionary containing the evaluated,
+    # simplified and LaTex transcribed results.
+
+
     def process_pdf_stream(self, pdf_stream):
         # Extract text from the PDF using fitz
         text = self.extract_text_from_pdf(pdf_stream)
@@ -167,9 +221,14 @@ class PDFProcessor:
         # Segment content using the enhanced method
         segments =self.enhanced_segment_content(text)
 
+        math_expressions = self.identify_math_expressions(text)
+        self.process_math_expressions(math_expressions)
+
         return segments
 
 
+
+        
 # Tabular data preprocessing
  
 class TabularDataProcessor:
