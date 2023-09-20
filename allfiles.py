@@ -30,20 +30,36 @@ import requests
 import json
 import sympy as sp
 
+from pptx.util import Inches
+
+
 
 # Powerpoint Processor
-class PowerPointProcessor:
+# class PowerPointProcessor:
 
-    def extract_text_from_ppt(self, ppt_stream):
-        prs = Presentation(ppt_stream)
-        text = ""
+#     def extract_text_from_ppt(self, ppt_stream):
+#         prs = Presentation(ppt_stream)
+#         text = ""
 
-        for slide in prs.slides:
-            for shape in slide.shapes:
-                if hasattr(shape, "text"):
-                    text += shape.text + "\n"
+#         for slide in prs.slides:
+#             for shape in slide.shapes:
+#                 # Extracting text from shapes
+#                 if hasattr(shape, "text"):
+#                     text += shape.text + "\n"
+#                 # Extracting text from tables
+#                 if hasattr(shape, "table"):
+#                     for row in shape.table.rows:
+#                         for cell in row.cells:
+#                             text += cell.text + "\n"
 
-        return text.strip() # return text, removing extra spaces
+#                 # Extracting text from images using Azure Form Recognizer 
+#                 if shape.shape_type == 13: # 13 is the shape type for Picuture
+#                     img_stream = shape.image.blob
+#                     img = Image.open(io.BytesIO(img_stream))
+#                     extracted_text = self.ocr_with_azure(img)
+#                     text = extract_text + "\n"
+
+#         return text.strip() # return text, removing extra spaces
 
 # PDF Processor
 class PDFProcessor:
@@ -529,9 +545,9 @@ def main():
                     # Using the process_pdf_stream method to extract and segment text from the PDF
                     segments = pdf_processor.process_pdf_stream(uploaded_file.read())
             
-                    for section, content in segments.items():
-                        if content:
-                            st.write(f"{section.capitalize()}:\n{content}\n")
+                    # for section, content in segments.items():
+                    #     if content:
+                    #         st.write(f"{section.capitalize()}:\n{content}\n")
                     text = "\n".join(segments.values())
 
             elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
