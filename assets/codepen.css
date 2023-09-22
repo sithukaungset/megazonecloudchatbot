@@ -1,0 +1,23 @@
+body {
+    background: transparent url(https://images.template.net/wp-content/uploads/2015/04/229713-Old-paper-texture.jpg) 50% 50% no-repeat;
+    background-size: cover;
+  }
+  
+  p {
+    position: relative;
+    color: transparent;
+    font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    font-weight: 700;
+    display: block;
+    box-sizing: border-box;
+    margin: 10%;
+  }
+  
+  p:after {
+    content: attr(data-content);
+      color: #333;
+    position: absolute;
+    left: 0;
+    top:0;
+    text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.5);
+  } 
