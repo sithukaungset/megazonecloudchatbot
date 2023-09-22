@@ -34,13 +34,87 @@ from pptx.util import Inches
 from PIL import Image
 
 def typewrite(text:str):
-    with open("assets/codepen.css") as f:
-        # The CSS from the codepen was stored in codepen.css
-        css = f.read()
+    css = '''
+    body {
+    background: transparent url(https://images.template.net/wp-content/uploads/2015/04/229713-Old-paper-texture.jpg) 50% 50% no-repeat;
+    background-size: cover;
+  }
+  
+  p {
+    position: relative;
+    color: transparent;
+    font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    font-weight: 700;
+    display: block;
+    box-sizing: border-box;
+    margin: 10%;
+  }
+  
+  p:after {
+    content: attr(data-content);
+      color: #333;
+    position: absolute;
+    left: 0;
+    top:0;
+    text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.5);
+  } 
+    /* Your CSS from codepen.css goes here */
+    '''
 
-    with open("assets/codepen.js") as f:
-        # The JS from the codepen was stored in codepen.js
-        js = f.read()
+
+    # Embed the JS directly
+    js = '''
+    /* Your JavaScript from codepen.js goes here */
+    function Typewrite() {
+    'use strict';
+    var el = null;
+    var text = "";
+    var tempText = "";
+    var interval;
+    var range = [1];
+    
+    var init = function(args) {
+      el = args.el || null;
+      text = args.el.innerHTML || "";
+      range.push(text.length)
+      interval = setInterval(animate, 1000)
+    };
+    
+    var setTempText = function() {
+      tempText = text.substring(0, range[0]);
+      if (tempText.length % 2 == 0)
+        tempText += "_";
+      el.setAttribute('data-content', tempText)
+      if ( range[0] < range[1]) {
+        range[0]++;
+        return true;      
+      }
+      return false;
+    };
+    
+    
+    var animate = function() {
+      // do things
+      setTempText();
+      clearInterval(interval)
+      if (text != tempText) {
+        var counter = Math.random() * 100 + 50;
+        interval = setInterval(animate, counter)
+      } else {
+        el.setAttribute('data-content', text)
+        console.log('done', interval)
+      }
+    }
+    return {
+      init: init
+    }
+  }
+  
+  var t = new Typewrite();
+  t.init({
+    el: document.getElementById("typewrite")
+  });
+    '''
 
     html = f"""
     <!DOCTYPE html>
