@@ -545,30 +545,26 @@ def main():
             
             # Pretty front-end
             response_content = response["choices"][0]["message"]["content"]
-            response_id = f"response_{hash(response)}"
-            st.markdown(f""" 
-                <div id = "{response_id}"></div>
+            response_id = f"response_{hash(response_content)}"
+            st.markdown(f"""
+                <div id="{response_id}"></div>
                 <script>
                     function typeWriter(elementId, text, delay = 50) {{
                         let i = 0;
                         let elem = document.getElementById(elementId);
                         function typing() {{
-                        
-                            let i = 0;
-                            let elem = document.getElementById(elementId);
-                            function typing() {{
-                                if (i < text.lenght) {{
-                                    elem.innerHTML  += text.charAt(i);
-                                    i++;
-                                    setTimeout(typing, delay);
-                                }}
+                            if (i < text.length) {{
+                                elem.innerHTML += text.charAt(i);
+                                i++;
+                                setTimeout(typing, delay);
                             }}
+                        }}
                         typing();
                     }}
-                    typeWriter("{response_id}", '{response_content}');
-                
+                    typeWriter("{response_id}", `{response_content}`);
                 </script>
-                    """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+
 
 
             if st.button('Translate to Korean'):
@@ -715,6 +711,7 @@ def main():
                         typeWriter("{response_id}", `{response_content}`);
                     </script>
                 """, unsafe_allow_html=True)
+
 
 
                 # Insert the question and answer into the database
