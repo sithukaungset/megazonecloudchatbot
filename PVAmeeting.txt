@@ -1,0 +1,19 @@
+The responsibilites to work
+
+MS Azure Power Platform
+
+Power Virtual Agent, Power Platform, need to test
+
+Co pilot --> Azure Service 
+
+OpenAI chat bot connection --> LLM 
+
+Conversation based chat bot
+
+AI function in real implementation
+
+Scenario --> website , html , custom knowledge base 
+
+Website, and other homepages
+
+Registration related data should be integrated with Azure OpenAI 
