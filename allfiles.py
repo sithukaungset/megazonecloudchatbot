@@ -33,6 +33,31 @@ import io
 from pptx.util import Inches
 from PIL import Image
 
+def typewrite(text:str):
+    with open("assets/codepen.css") as f:
+        # The CSS from the codepen was stored in codepen.css
+        css = f.read()
+
+    with open("assets/codepen.js") as f:
+        # The JS from the codepen was stored in codepen.js
+        js = f.read()
+
+    html = f"""
+    <!DOCTYPE html>
+    <head>
+    <style>
+        {css}
+    </style>
+    </head>
+    <body>
+        <p id="typewrite" data-content="">{text.upper()}</p>
+        <script>
+            {js}
+        </script>
+    </body>
+    </html>
+    """
+    return html
 
 #Powerpoint Processor
 class PowerPointProcessor:
@@ -692,24 +717,9 @@ def main():
                     c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
                     conn.commit()
 
-                    # JavaScript for typewriter effect
-                    st.markdown(f"""
-                        <script>
-                            function typeWriter(elementId, text, delay = 50) {{
-                                let i = 0;
-                                let elem = document.getElementById(elementId);
-                                function typing() {{
-                                    if (i < text.length) {{
-                                        elem.innerHTML += text.charAt(i);
-                                        i++;
-                                        setTimeout(typing, delay);
-                                    }}
-                                }}
-                                typing();
-                            }}
-                            typeWriter("{response_id}", `{response_content}`);
-                        </script>
-                    """, unsafe_allow_html=True)
+                    # Use the typewrite function for the typewriter effect
+                    typewrited = typewrite(response_content)
+                    st.components.v1.html(typewrited, height=400, scrolling=True)
 
                 else:
                     st.write("Sorry, I couldn't generate a response for that question.")
