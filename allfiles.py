@@ -601,7 +601,8 @@ def main():
                     # for section, content in segments.items():
                     #     if content:
                     #         st.write(f"{section.capitalize()}:\n{content}\n")
-                    text = "\n".join(segments.values())
+                    text = "\n".join(filter(None, segments.values()))
+
 
             elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
                 with st.spinner('Reading the PowerPoint file...'):
