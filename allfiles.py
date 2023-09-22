@@ -681,7 +681,7 @@ def main():
                 # st.markdown(
                 #     f'### Answer: \n {result["result"]}', unsafe_allow_html=True)
 
-                response_content = response["choices"][0]["message"]["content"]
+                response_content = result["choices"][0]["message"]["content"]
                 response_id = f"response_{hash(response_content)}"
 
                 # Update the chat history with the new message
