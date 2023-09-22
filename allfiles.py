@@ -29,37 +29,65 @@ import base64
 import requests
 import json
 import sympy as sp
-
+import io
 from pptx.util import Inches
+from PIL import Image
 
 
+#Powerpoint Processor
+class PowerPointProcessor:
 
-# Powerpoint Processor
-# class PowerPointProcessor:
+    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
+    AZURE_HEADERS = {
+        "Ocp-Apim-Subscription-Key" : "2fe1b91a80f94bb2a751f7880f00adf6",
+        "Content-Type" : "image/png"
+    }
 
-#     def extract_text_from_ppt(self, ppt_stream):
-#         prs = Presentation(ppt_stream)
-#         text = ""
+    def ocr_with_azure(self, image):
+        """
+        Use Azure Form Recognizer to extract text from the given image.
 
-#         for slide in prs.slides:
-#             for shape in slide.shapes:
-#                 # Extracting text from shapes
-#                 if hasattr(shape, "text"):
-#                     text += shape.text + "\n"
-#                 # Extracting text from tables
-#                 if hasattr(shape, "table"):
-#                     for row in shape.table.rows:
-#                         for cell in row.cells:
-#                             text += cell.text + "\n"
+        """
+        img_stream = io.BytesIO()
+        image.save(img_stream, format='PNG')
+        img_bytes = img_stream.getvalue()
 
-#                 # Extracting text from images using Azure Form Recognizer 
-#                 if shape.shape_type == 13: # 13 is the shape type for Picuture
-#                     img_stream = shape.image.blob
-#                     img = Image.open(io.BytesIO(img_stream))
-#                     extracted_text = self.ocr_with_azure(img)
-#                     text = extract_text + "\n"
+        # Make the API request
+        response = requests.post(
+            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data = img_bytes)
+        response_data = response.json()
 
-#         return text.strip() # return text, removing extra spaces
+        # Extract text from the response
+        text_data = []
+        for page in response_data.get('analyzeResult', {}).get('readResults', []):
+            for line in page.get('lines', []):
+                text_data.append(line.get("text", ""))
+
+        return "\n".join(text_data)
+
+    def extract_text_from_ppt(self, ppt_stream):
+        prs = Presentation(ppt_stream)
+        text = ""
+
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                # Extracting text from shapes
+                if hasattr(shape, "text"):
+                    text += shape.text + "\n"
+                # Extracting text from tables
+                if hasattr(shape, "table"):
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            text += cell.text + "\n"
+
+                # Extracting text from images using Azure Form Recognizer 
+                if shape.shape_type == 13: # 13 is the shape type for Picuture
+                    img_stream = shape.image.blob
+                    img = Image.open(io.BytesIO(img_stream))
+                    extracted_text = self.ocr_with_azure(img)
+                    text = extract_text + "\n"
+
+        return text.strip() # return text, removing extra spaces
 
 # PDF Processor
 class PDFProcessor:
@@ -96,7 +124,7 @@ class PDFProcessor:
         Convert a PDF into images and then use Azure to extract text.
         Return the combined text from all pages.
         """
-        from pdf2image import convert_from_path
+        
 
         # Convert PDF to a list of images
         images = convert_from_path(pdf_path)

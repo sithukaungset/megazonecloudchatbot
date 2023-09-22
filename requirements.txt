@@ -17,3 +17,4 @@ pdfminer.six
 requests
 python-pptx
 sympy
+Pillow
