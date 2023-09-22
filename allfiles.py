@@ -681,10 +681,19 @@ def main():
                 # st.markdown(
                 #     f'### Answer: \n {result["result"]}', unsafe_allow_html=True)
 
-                response_content = result["result"]
+                response_content = response["choices"][0]["message"]["content"]
                 response_id = f"response_{hash(response_content)}"
+
+                # Update the chat history with the new message
+                chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> <div id='{response_id}'></div><br><br>"
+                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
+
+                # Insert the question and answer into the database
+                c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
+                conn.commit()
+
+                # JavaScript for typewriter effect
                 st.markdown(f"""
-                    <div id="{response_id}"></div>
                     <script>
                         function typeWriter(elementId, text, delay = 50) {{
                             let i = 0;
@@ -701,6 +710,7 @@ def main():
                         typeWriter("{response_id}", `{response_content}`);
                     </script>
                 """, unsafe_allow_html=True)
+
 
 
 
