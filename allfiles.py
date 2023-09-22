@@ -680,37 +680,39 @@ def main():
                 
                 # st.markdown(
                 #     f'### Answer: \n {result["result"]}', unsafe_allow_html=True)
+                if "choices" in result and result["choices"]:
+                    response_content = result["choices"][0]["message"]["content"]
+                    response_id = f"response_{hash(response_content)}"
 
-                response_content = result["choices"][0]["message"]["content"]
-                response_id = f"response_{hash(response_content)}"
+                    # Update the chat history with the new message
+                    chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> <div id='{response_id}'></div><br><br>"
+                    chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
-                # Update the chat history with the new message
-                chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> <div id='{response_id}'></div><br><br>"
-                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
+                    # Insert the question and answer into the database
+                    c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
+                    conn.commit()
 
-                # Insert the question and answer into the database
-                c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
-                conn.commit()
-
-                # JavaScript for typewriter effect
-                st.markdown(f"""
-                    <script>
-                        function typeWriter(elementId, text, delay = 50) {{
-                            let i = 0;
-                            let elem = document.getElementById(elementId);
-                            function typing() {{
-                                if (i < text.length) {{
-                                    elem.innerHTML += text.charAt(i);
-                                    i++;
-                                    setTimeout(typing, delay);
+                    # JavaScript for typewriter effect
+                    st.markdown(f"""
+                        <script>
+                            function typeWriter(elementId, text, delay = 50) {{
+                                let i = 0;
+                                let elem = document.getElementById(elementId);
+                                function typing() {{
+                                    if (i < text.length) {{
+                                        elem.innerHTML += text.charAt(i);
+                                        i++;
+                                        setTimeout(typing, delay);
+                                    }}
                                 }}
+                                typing();
                             }}
-                            typing();
-                        }}
-                        typeWriter("{response_id}", `{response_content}`);
-                    </script>
-                """, unsafe_allow_html=True)
+                            typeWriter("{response_id}", `{response_content}`);
+                        </script>
+                    """, unsafe_allow_html=True)
 
+                else:
+                    st.write("Sorry, I couldn't generate a response for that question.")
 
 
 
