@@ -24,7 +24,6 @@ import pytesseract
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_path
 import re
-import cv2
 import base64
 import requests
 import json
@@ -49,18 +48,19 @@ class PowerPointProcessor:
         Use Azure Form Recognizer to extract text from the given image.
         """
 
-        # Convert the image to a PNG format
-        _, img_encoded = cv2.imencode('.png', image)
-        img_bytes = img_encoded.tobytes()
+        # Convert the image to a PNG format using Pillow
+        img_stream = io.BytesIO()
+        image.save(img_stream, format='PNG')
+        img_bytes = img_stream.getvalue()
         
         # Make the API request
         response = requests.post(
-            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data = img_bytes)
+            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=img_bytes)
         response_data = response.json()
 
         # Extract from the response. Depending on the structure of the response data,
         text_data = []
-        for page in response.data.get('analyzeResult', {}).get('readResults', []):
+        for page in response_data.get('analyzeResult', {}).get('readResults', []):
             for line in page.get('lines', []):
                 text_data.append(line.get('text', ''))
         
@@ -103,18 +103,19 @@ class PDFProcessor:
         Use Azure Form Recognizer to extract text from the given image.
         """
 
-        # Convert the image to a PNG format
-        _, img_encoded = cv2.imencode('.png', image)
-        img_bytes = img_encoded.tobytes()
+        # Convert the image to a PNG format using Pillow
+        img_stream = io.BytesIO()
+        image.save(img_stream, format='PNG')
+        img_bytes = img_stream.getvalue()
         
         # Make the API request
         response = requests.post(
-            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data = img_bytes)
+            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=img_bytes)
         response_data = response.json()
 
         # Extract from the response. Depending on the structure of the response data,
         text_data = []
-        for page in response.data.get('analyzeResult', {}).get('readResults', []):
+        for page in response_data.get('analyzeResult', {}).get('readResults', []):
             for line in page.get('lines', []):
                 text_data.append(line.get('text', ''))
         
