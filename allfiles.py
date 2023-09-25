@@ -27,6 +27,7 @@ import re
 import base64
 import requests
 import json
+from PIL import Image
 
 
 # PDF Processor
@@ -37,7 +38,18 @@ class PDFProcessor:
         doc = fitz.open("pdf", pdf_bytes)
         text = ""
         for page in doc:
-            text += page.get_text("text")
+            # Extract text using MuPDF
+            text_content = page.get_text("text")
+            
+            # If page has very little text, try OCR
+            if len(text_content.strip().split()) < 5:
+                image = page.get_pixmap()
+                image_data = image.tobytes()
+                img = Image.open(io.BytesIO(image_data))
+                text_content = pytesseract.image_to_string(img)
+
+            text += text_content
+
         return text
 
     def remove_headers_and_footers(self, text):
