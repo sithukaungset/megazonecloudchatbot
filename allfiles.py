@@ -28,6 +28,7 @@ import base64
 import requests
 import json
 from PIL import Image
+import io
 
 
 # PDF Processor
