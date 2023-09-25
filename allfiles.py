@@ -277,9 +277,11 @@ def main():
             if file_details["FileType"] == "application/pdf":
                  with st.spinner('Processing the PDF...'):
                     segments = pdf_processor.process_pdf(uploaded_file)
-                    for section, content in segments.items():
-                            if content:
-                                st.write(f"{section.capitalize()}:\n{content}\n")
+                    # for section, content in segments.items():
+                    #         if content:
+                    #             st.write(f"{section.capitalize()}:\n{content}\n")
+                    text = " ".join(segments.values())  # Assuming segments is a dict where values are the text
+
 
 
             elif file_details["FileType"] == "text/plain":
