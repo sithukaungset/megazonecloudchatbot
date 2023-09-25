@@ -563,8 +563,6 @@ def main():
 
     else:
 
-        # Create an instance of the PDFProcessor
-        pdf_processor = PDFProcessor()
         # upload file
         uploaded_file = st.file_uploader("Upload your file", type=[
             "pdf", "csv", "txt", "xlsx", "xls", "ppt", "pptx"])
