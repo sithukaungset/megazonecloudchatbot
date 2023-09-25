@@ -552,17 +552,20 @@ def main():
             # st.markdown(
             #     f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
             
-            # Use the typewriter effect function
-            typewritten_response = typewriter_effect(response_content
-                                                    )
+            if "choices" in response and response["choices"]:
+                response_content = response["choices"][0]["message"]["content"]
+                
+                # Use the typewriter effect function
+                typewritten_response = typewriter_effect(response_content)
+                    
+                                        
+                # Update the chat history with the new message
+                chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> {response_content}<br><br>"
+                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
-            # Update the chat history with the new message
-            chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> {response_content}<br><br>"
-            chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
-
-            # Insert the question and answer into the database
-            c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
-            conn.commit()
+                # Insert the question and answer into the database
+                c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
+                conn.commit()
 
 
 
