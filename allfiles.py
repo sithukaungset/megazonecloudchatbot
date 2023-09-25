@@ -547,20 +547,6 @@ def main():
             )
             st.markdown(
                 f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
-
-            
-           
-                                        
-             # Update the chat history with the new message
-            chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> {response_content}<br><br>"
-            chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
-
-                # Insert the question and answer into the database
-            c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
-            conn.commit()
-
-
-
             if st.button('Translate to Korean'):
                 translated_text = translate(result)
             # Insert the question and answer into the database
@@ -682,24 +668,8 @@ def main():
             if user_question:
                 result = qa({"query": user_question})
                 # Display the result in a more noticeable way
-                
                 st.markdown(
                     f'### Answer: \n {result["result"]}', unsafe_allow_html=True)
-                # if "choices" in result and result["choices"]:
-                #     response_content = result["choices"][0]["message"]["content"]
-                #     response_id = f"response_{hash(response_content)}"
-
-                    # Update the chat history with the new message
-                chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> <div id='{response_id}'></div><br><br>"
-                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
-
-                    # Insert the question and answer into the database
-                c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
-                conn.commit()
-
-                  
-
-
 
                 # Insert the question and answer into the database
                 c.execute("INSERT INTO chat_history VALUES (?,?)",
@@ -709,7 +679,6 @@ def main():
                 conn.commit()
                 chat_history = f"<strong>User :</strong> {user_question}<br><strong>ChatBot :</strong> {result['result']}<br><br>" + chat_history
                 chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
-
 
 if __name__ == '__main__':
     main()
