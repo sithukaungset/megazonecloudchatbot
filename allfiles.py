@@ -15,7 +15,6 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
-from pptx import Presentation
 from langchain.llms import AzureOpenAI
 import tiktoken
 import sqlite3
@@ -24,127 +23,13 @@ import pytesseract
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_path
 import re
+#import cv2
 import base64
 import requests
 import json
-import sympy as sp
-import io
-from pptx.util import Inches
-from PIL import Image
-import time
 
 
-# def ocr_with_azure(image):
-#     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-#     AZURE_HEADERS = {
-#         "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-#         "Content-Type": "image/png"
-#     }
-
-#     # Resize the image if needed
-#     width, height = image.size
-#     if width < 50 or height < 50:
-#         image = image.resize((max(50, width), max(50, height)))
-#     elif width > 10000 or height > 10000:
-#         image = image.resize((min(10000, width), min(10000, height)))
-
-#     img_stream = io.BytesIO()
-#     image.save(img_stream, format='PNG')
-#     img_bytes = img_stream.getvalue()
-
-#     response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
-    
-#     if response.status_code != 202:
-#         raise Exception(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
-
-#     # Extract operation location URL from headers to check status
-#     operation_location = response.headers.get("Operation-Location")
-#     if not operation_location:
-#         raise Exception("Operation-Location header not found in the response.")
-    
-#     max_retries = 10
-#     wait_time = 5
-
-#     while max_retries > 0:
-#         time.sleep(wait_time)
-#         status_response = requests.get(operation_location, headers=AZURE_HEADERS)
-#         status_data = status_response.json()
-#         status = status_data.get("status")
-        
-#         if status == "succeeded":
-#             break
-#         elif status in ["failed", "invalid"]:
-#             raise Exception(f"OCR processing failed: {status_data.get('error', {}).get('message', 'No error message available.')}")
-        
-#         max_retries -= 1
-
-#     if max_retries == 0:
-#         raise Exception("OCR processing did not complete in the expected time.")
-
-#     text_data = []
-#     for page in status_data.get('analyzeResult', {}).get('readResults', []):
-#         for line in page.get('lines', []):
-#             text_data.append(line.get("text", ""))
-            
-#     return "\n".join(text_data)
-
-
-# #Powerpoint Processor
-# class PowerPointProcessor:
-
-#     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-#     AZURE_HEADERS = {
-#         "Ocp-Apim-Subscription-Key" : "2fe1b91a80f94bb2a751f7880f00adf6",
-#         "Content-Type" : "image/png"
-#     }
-
-#     def ocr_with_azure(self, image):
-#         """
-#         Use Azure Form Recognizer to extract text from the given image.
-#         """
-
-#         # Convert the image to a PNG format using Pillow
-#         img_stream = io.BytesIO()
-#         image.save(img_stream, format='PNG')
-#         img_bytes = img_stream.getvalue()
-        
-#         # Make the API request
-#         response = requests.post(
-#             self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=img_bytes)
-#         response_data = response.json()
-
-#         # Extract from the response. Depending on the structure of the response data,
-#         text_data = []
-#         for page in response_data.get('analyzeResult', {}).get('readResults', []):
-#             for line in page.get('lines', []):
-#                 text_data.append(line.get('text', ''))
-        
-#         return "\n".join(text_data)
-
-#     def extract_text_from_ppt(self, ppt_stream):
-#         prs = Presentation(ppt_stream)
-#         text = ""
-
-#         for slide in prs.slides:
-#             for shape in slide.shapes:
-#                 # Extracting text from shapes
-#                 if hasattr(shape, "text"):
-#                     text += shape.text + "\n"
-#                 # Extracting text from tables
-#                 if hasattr(shape, "table"):
-#                     for row in shape.table.rows:
-#                         for cell in row.cells:
-#                             text += cell.text + "\n"
-
-#                 # Extracting text from images using Azure Form Recognizer 
-#                 if shape.shape_type == 13: # 13 is the shape type for Picuture
-#                     img_stream = shape.image.blob
-#                     img = Image.open(io.BytesIO(img_stream))
-#                     extracted_text = self.ocr_with_azure(img)
-#                     text = extracted_text + "\n"
-
-#         return text.strip() # return text, removing extra spaces
-
+# PDF Processor
 class PDFProcessor:
     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
     AZURE_HEADERS = {
@@ -248,196 +133,11 @@ class PDFProcessor:
         segments = self.segment_content(text)
         
         return segments
-    
-# PDF Processor
-# class PDFProcessor:
-#     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-#     AZURE_HEADERS = {
-#         "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-#         "Content-Type": "image/png"
-#     }
-
-#     def ocr_with_azure(self, image):
-#         """
-#         Use Azure Form Recognizer to extract text from the given image.
-#         """
-
-#         # Convert the image to a PNG format using Pillow
-#         img_stream = io.BytesIO()
-#         image.save(img_stream, format='PNG')
-#         img_bytes = img_stream.getvalue()
-        
-#         # Make the API request
-#         response = requests.post(
-#             self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=img_bytes)
-#         response_data = response.json()
-
-#         # Extract from the response. Depending on the structure of the response data,
-#         text_data = []
-#         for page in response_data.get('analyzeResult', {}).get('readResults', []):
-#             for line in page.get('lines', []):
-#                 text_data.append(line.get('text', ''))
-        
-#         return "\n".join(text_data)
-    
-#     def ocr_pdf(self, pdf_path):
-#         """
-#         Convert a PDF into images and then use Azure to extract text.
-#         Return the combined text from all pages.
-#         """
-        
-
-#         # Convert PDF to a list of images
-#         images = convert_from_path(pdf_path)
-
-#         # OCR each image to extract text using Azure
-#         texts = [self.ocr_with_azure(img) for img in images]
-
-#         # Combine the texts from all pages
-#         combined_text = "\n".join(texts)
-
-#         return combined_text
-    
-#     def extract_text_from_pdf(self, pdf_stream):
-#         doc = fitz.open(stream=pdf_stream, filetype='pdf')
-#         text = ""
-#         for page in doc:
-#             text += page.get_text("text", clip=page.rect, flags=fitz.TEXT_PRESERVE_LIGATURES)
-#         return text
-    
-#     def remove_headers_and_footers(self, text):
-#         # A very basic method: remove the first and last line from each page, assuming they might be headers/footers.
-#         # This might need more advanced logic, possibly using patterns or machine learning models.
-#         # Split text into pages
-#         pages = text.split("\n\n")
-#         # For each page, remove the first and last lines if they exist
-#         cleaned_pages = []
-#         for page in pages:
-#             lines = page.split('\n')
-#             # Check if the page has more than 2 lines, if so, remove the first and last lines.
-#             # Otherwise, just use the lines as they are.
-#             cleaned_page = lines[1:-1] if len(lines) > 2 else lines
-#             cleaned_pages.append("\n".join(cleaned_page))
-
-#         # Join the cleaned pages back into a single text
-#         cleaned_text = "\n".join(cleaned_pages)
-#         return cleaned_text
-        
-
-#     def enhanced_segment_content(self, text):
-#         # Define potential section headers and their variations
-#         sections = {
-#             "introduction": ["introduction", "intro", "background"],
-#             "methods": ["methods", "methodology", "experimental", "experiment","materials and methods"],
-#             "results": ["results","findings", "outcome"],
-#             "discussion": ["discussion","analysis"],
-#             "references": ["references", "bibliography","citations"],
-#             "acknowledgments": ["acknowledgments", "acknowledgement","thanks","gratitude"]
-#         }
-
-#         segments = {key: None for key in sections.keys()}
-
-#         # Convert the text to lower case for case insensitive search
-#         lower_text = text.lower()
-
-#         # For each section, find the starting index using its potential headers
-#         indices = {}
-#         for section, patterns in sections.items():
-#             indices[section] = float('inf')  # initialize with "infinity"
-#             for pattern in patterns:
-#                 idx = lower_text.find(pattern)
-#                 if idx != -1 and idx < indices[section]:  # Update with the smallest index found
-#                     indices[section] = idx
-
-#         # Sort sections by their starting index
-#         sorted_sections = sorted(indices.items(), key=lambda x: x[1])
-
-#         # Extract content for each section based on the detected starting indices
-#         for i, (section, start_idx) in enumerate(sorted_sections):
-#             if start_idx == float('inf'):  # If section was not found
-#                 continue
-
-#             # Set end index to start of next section or end of text
-#             end_idx = sorted_sections[i+1][1] if i+1 < len(sorted_sections) else len(text)
-
-#             # Ensure both start_idx and end_idx are valid integers before slicing
-#             if isinstance(start_idx, int) and isinstance(end_idx, int):
-#                 segments[section] = text[start_idx:end_idx].strip()
-
-#         return segments
-
-    
-
-#     # Mathematical Section for preprocessing Maths related texts
-
-#     def identify_math_expressions(self, text):
-#         """
-#         A simple function to identity mathematical expressions.
-#         This is a very basic way to identify mathematical content using the presence of '='
-#         Depending on our needs, this might need to be refined.
-#         """
-#         math_expressions = []
-#         for line in text.split('\n'):
-#             if '=' in line:
-#                 math_expressions.append(line)
-#             return math_expressions
-        
-#     def process_math_expressions(self, math_expressions):
-#         """
-#         Process the identified mathematical expressions using Azure OCR or any other processing methods
-        
-#         1. Evaluation, 2. Simplication, 3. Transcription to LaTex"""
-#         processed_expressions = {}
-    
-#         for expression in math_expressions:
-#             print(expression)
-#             expression_data = {}
-
-#             # Evaluation
-#             try: 
-#                 expression_data["evaluated"] = sp.sympify(expression).evalf()
-#             except Exception as e:
-#                 expression_data["evaluated"] = str(e)
-
-#             # Simplification
-#             try:
-#                 expression_data["simplified"] = sp.sympify(expression).simplify()
-#             except Exception as e:
-#                 expression_data["simplified"] = str(e)
-
-#             # Transcription to Latex
-#             try:
-#                 expression_data["latex"] = sp.latex(sp.sympify(expression))
-#             except Exception as e:
-#                 expression_data["latex"] = str(e)
-
-#             processed_expressions[expression] = expression_data
-        
-#         return processed_expressions
-    
-#     # Now when we call 'process math expressions', it will return a dictionary with each original
-#     # expression as the key.The value for each key will be another dictionary containing the evaluated,
-#     # simplified and LaTex transcribed results.
-
-
-#     def process_pdf_stream(self, pdf_stream):
-#         # Extract text from the PDF using fitz
-#         text = self.extract_text_from_pdf(pdf_stream)
-
-#         # Remove headers and footers
-#         text = self.remove_headers_and_footers(text)
-
-#         # Segment content using the enhanced method
-#         segments =self.enhanced_segment_content(text)
-
-#         math_expressions = self.identify_math_expressions(text)
-#         self.process_math_expressions(math_expressions)
-
-#         return segments
-
 
 
         
+        
+
 # Tabular data preprocessing
  
 class TabularDataProcessor:
@@ -720,10 +420,12 @@ def main():
             chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
     else:
+
+        # Create an instance of the PDFProcessor
         pdf_processor = PDFProcessor()
         # upload file
         uploaded_file = st.file_uploader("Upload your file", type=[
-            "pdf", "csv", "txt", "xlsx", "xls", "ppt", "pptx"])
+            "pdf", "csv", "txt", "xlsx", "xls"])
 
         # extract the text
         if uploaded_file is not None:
@@ -739,58 +441,6 @@ def main():
                     for section, content in segments.items():
                         if content:
                             st.write(f"{section.capitalize()}:\n{content}\n")
-
-            # if file_details["FileType"] == "application/pdf":
-            #     with st.spinner('Reading the PDF...'):
-            #         doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
-            #         text = ""
-            #         for page in doc:
-            #             text += page.get_text()
-
-            #             # Extract images from the page
-            #             image_list = page.get_images(full=True)
-            #             for img_index, img in enumerate(image_list):
-            #                 xref = img[0]
-            #                 base_image = doc.extract_image(xref)
-            #                 image_bytes = base_image["image"]
-
-            #                 # Convert image bytes to PIL Image
-            #                 image = Image.open(io.BytesIO(image_bytes))
-
-            #                 # Process the image with Azure Form Recognizer
-            #                 extracted_text = ocr_with_azure(image)
-            #                 text += extracted_text + "\n"
-
-            # if file_details["FileType"] == "application/pdf":
-            #     with st.spinner('Reading the PDF...'):
-            #         doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
-            #         text = ""
-            #         for page in doc:
-            #             text += page.get_text()
-
-            #             # Extract images from the page
-            #             image_list = page.get_images(full=True)
-            #             for img_index, img in enumerate(image_list):
-            #                 xref = img[0]
-            #                 base_image = doc.extract_image(xref)
-            #                 image_bytes = base_image["image"]
-
-            #                 # Convert image bytes to PIL Image
-            #                 image = Image.open(io.BytesIO(image_bytes))
-
-            #                 # Process the image with Azure Form Recognizer
-            #                 extracted_text = ocr_with_azure(image)
-            #                 text += extracted_text + "\n"
-
-            elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
-                with st.spinner('Reading the PowerPoint file...'):
-                    prs = Presentation(uploaded_file)
-                    text = ""
-                    for slide in prs.slides:
-                        for shape in slide.shapes:
-                            if hasattr(shape, "text"):
-                                text += shape.text + "\n"
-
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
@@ -881,6 +531,7 @@ def main():
                 conn.commit()
                 chat_history = f"<strong>User :</strong> {user_question}<br><strong>ChatBot :</strong> {result['result']}<br><br>" + chat_history
                 chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
+
 
 if __name__ == '__main__':
     main()
