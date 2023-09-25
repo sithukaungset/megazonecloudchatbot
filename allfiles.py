@@ -35,9 +35,6 @@ from PIL import Image
 import time
 
 
-
-    
-
 #Powerpoint Processor
 class PowerPointProcessor:
 
@@ -50,23 +47,23 @@ class PowerPointProcessor:
     def ocr_with_azure(self, image):
         """
         Use Azure Form Recognizer to extract text from the given image.
-
         """
-        img_stream = io.BytesIO()
-        image.save(img_stream, format='PNG')
-        img_bytes = img_stream.getvalue()
 
+        # Convert the image to a PNG format
+        _, img_encoded = cv2.imencode('.png', image)
+        img_bytes = img_encoded.tobytes()
+        
         # Make the API request
         response = requests.post(
             self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data = img_bytes)
         response_data = response.json()
 
-        # Extract text from the response
+        # Extract from the response. Depending on the structure of the response data,
         text_data = []
-        for page in response_data.get('analyzeResult', {}).get('readResults', []):
+        for page in response.data.get('analyzeResult', {}).get('readResults', []):
             for line in page.get('lines', []):
-                text_data.append(line.get("text", ""))
-
+                text_data.append(line.get('text', ''))
+        
         return "\n".join(text_data)
 
     def extract_text_from_ppt(self, ppt_stream):
@@ -89,7 +86,7 @@ class PowerPointProcessor:
                     img_stream = shape.image.blob
                     img = Image.open(io.BytesIO(img_stream))
                     extracted_text = self.ocr_with_azure(img)
-                    text = extract_text + "\n"
+                    text = extracted_text + "\n"
 
         return text.strip() # return text, removing extra spaces
 
