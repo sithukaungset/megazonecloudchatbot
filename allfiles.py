@@ -549,7 +549,7 @@ def main():
             def typewriter_effect(text, delay=0.1):
                 typewritten_text = ""
                 for char in text:
-                    typewriter_text += char
+                    typewritten_text += char
                     time.sleep(delay)
                 return typewritten_text
             
