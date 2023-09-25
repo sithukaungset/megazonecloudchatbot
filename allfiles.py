@@ -145,6 +145,110 @@ import time
 
 #         return text.strip() # return text, removing extra spaces
 
+class PDFProcessor:
+    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
+    AZURE_HEADERS = {
+        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
+        "Content-Type": "image/png"
+    }
+
+    def ocr_with_azure(self, image):
+        """
+        Use Azure Form Recognizer to extract text from the given image.
+        """
+
+        # Convert the image to a PNG format
+        _, img_encoded = cv2.imencode('.png', image)
+        img_bytes = img_encoded.tobytes()
+        
+        # Make the API request
+        response = requests.post(
+            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data = img_bytes)
+        response_data = response.json()
+
+        # Extract from the response. Depending on the structure of the response data,
+        text_data = []
+        for page in response.data.get('analyzeResult', {}).get('readResults', []):
+            for line in page.get('lines', []):
+                text_data.append(line.get('text', ''))
+        
+        return "\n".join(text_data)
+    
+    def ocr_pdf(self, pdf_path):
+        """
+        Convert a PDF into images and then use Azure to extract text.
+        Return the combined text from all pages.
+        """
+        from pdf2image import convert_from_path
+
+        # Convert PDF to a list of images
+        images = convert_from_path(pdf_path)
+
+        # OCR each image to extract text using Azure
+        texts = [self.ocr_with_azure(img) for img in images]
+
+        # Combine the texts from all pages
+        combined_text = "\n".join(texts)
+
+        return combined_text
+    
+    def extract_text_from_pdf(self, pdf_stream):
+        doc = fitz.open(stream=pdf_stream, filetype='pdf')
+        text = ""
+        for page in doc:
+            text += page.get_text("text", clip=page.rect, flags=fitz.TEXT_PRESERVE_LIGATURES)
+        return text
+    
+    def remove_headers_and_footers(self, text):
+        # A very basic method: remove the first and last line from each page, assuming they might be headers/footers.
+        # This might need more advanced logic, possibly using patterns or machine learning models.
+        # Split text into pages
+        pages = text.split("\n\n")
+        # For each page, remove the first and last lines if they exist
+        cleaned_pages = []
+        for page in pages:
+            lines = page.split('\n')
+            # Check if the page has more than 2 lines, if so, remove the first and last lines.
+            # Otherwise, just use the lines as they are.
+            cleaned_page = lines[1:-1] if len(lines) > 2 else lines
+            cleaned_pages.append("\n".join(cleaned_page))
+
+        # Join the cleaned pages back into a single text
+        cleaned_text = "\n".join(cleaned_pages)
+        return cleaned_text
+        
+
+    def segment_content(self, text):
+        # Example segmentation - you can further enhance this
+        segments = {
+            "introduction": None,
+            "methods": None,
+            "results": None,
+            "discussion": None,
+            "references": None
+        }
+
+        # Split based on some common section titles. This is simplistic and might not work for all papers.
+        for section in segments.keys():
+            start_idx = text.lower().find(section)
+            if start_idx != -1:
+                end_idx = text.find("\n\n", start_idx)
+                segments[section] = text[start_idx:end_idx].strip()
+
+        return segments
+
+    def process_pdf_stream(self, pdf_stream):
+        # Extract text from the PDF using fitz
+        text = self.extract_text_from_pdf(pdf_stream)
+        
+        # Remove headers and footers
+        text = self.remove_headers_and_footers(text)
+        
+        # Segment content
+        segments = self.segment_content(text)
+        
+        return segments
+    
 # PDF Processor
 # class PDFProcessor:
 #     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
@@ -616,7 +720,7 @@ def main():
             chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
     else:
-
+        pdf_processor = PDFProcessor()
         # upload file
         uploaded_file = st.file_uploader("Upload your file", type=[
             "pdf", "csv", "txt", "xlsx", "xls", "ppt", "pptx"])
@@ -628,12 +732,13 @@ def main():
             st.write(file_details)
 
             if file_details["FileType"] == "application/pdf":
-                with st.spinner('Reading the PDF...'):
-                    doc = fitz.open(
-                        stream=uploaded_file.read(), filetype='pdf')
-                    text = ""
-                    for page in doc:
-                        text += page.get_text()
+                with st.spinner('Processing the PDF...'):
+                    # Using the process_pdf_stream method to extract and segment text from the PDF
+                    segments = pdf_processor.process_pdf_stream(uploaded_file.read())
+            
+                    for section, content in segments.items():
+                        if content:
+                            st.write(f"{section.capitalize()}:\n{content}\n")
 
             # if file_details["FileType"] == "application/pdf":
             #     with st.spinner('Reading the PDF...'):
