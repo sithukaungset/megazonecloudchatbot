@@ -363,7 +363,7 @@ def main():
 
             # split into chunks
             text_splitter = CharacterTextSplitter(
-                separator="\n", chunk_size=10000, chunk_overlap=200, length_function=len)
+                separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
             chunks = text_splitter.split_text(text)
 
             # load the faiss vector store we saved into memory
