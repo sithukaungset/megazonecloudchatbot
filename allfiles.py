@@ -177,10 +177,10 @@ class PDFProcessor:
         }
 
         segments = {key: None for key in sections.keys()}
-    
+
         # Convert the text to lower case for case insensitive search
         lower_text = text.lower()
-        
+
         # For each section, find the starting index using its potential headers
         indices = {}
         for section, patterns in sections.items():
@@ -189,20 +189,24 @@ class PDFProcessor:
                 idx = lower_text.find(pattern)
                 if idx != -1 and idx < indices[section]:  # Update with the smallest index found
                     indices[section] = idx
-                    
+
         # Sort sections by their starting index
         sorted_sections = sorted(indices.items(), key=lambda x: x[1])
-        
+
         # Extract content for each section based on the detected starting indices
         for i, (section, start_idx) in enumerate(sorted_sections):
             if start_idx == float('inf'):  # If section was not found
                 continue
-            
+
             # Set end index to start of next section or end of text
             end_idx = sorted_sections[i+1][1] if i+1 < len(sorted_sections) else len(text)
-            segments[section] = text[start_idx:end_idx].strip()
-        
+
+            # Ensure both start_idx and end_idx are valid integers before slicing
+            if isinstance(start_idx, int) and isinstance(end_idx, int):
+                segments[section] = text[start_idx:end_idx].strip()
+
         return segments
+
     
 
     # Mathematical Section for preprocessing Maths related texts
