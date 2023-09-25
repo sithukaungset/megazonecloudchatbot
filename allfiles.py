@@ -40,7 +40,13 @@ def ocr_with_azure(image):
         "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
         "Content-Type": "image/png"
     }
-    
+     # Check and resize the image if its dimensions are outside the acceptable range
+    width, height = image.size
+    if width < 50 or height < 50:
+        image = image.resize((max(50, width), max(50, height)))
+    elif width > 10000 or height > 10000:
+        image = image.resize((min(10000, width), min(10000, height)))
+        
     img_stream = io.BytesIO()
     image.save(img_stream, format='PNG')
     img_bytes = img_stream.getvalue()
@@ -61,6 +67,8 @@ def ocr_with_azure(image):
             text_data.append(line.get("text", ""))
 
     return "\n".join(text_data)
+
+
 
 # #Powerpoint Processor
 # class PowerPointProcessor:
@@ -600,34 +608,13 @@ def main():
                             "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
             st.write(file_details)
 
-            # if file_details["FileType"] == "application/pdf":
-            #     with st.spinner('Reading the PDF...'):
-            #         doc = fitz.open(
-            #             stream=uploaded_file.read(), filetype='pdf')
-            #         text = ""
-            #         for page in doc:
-            #             text += page.get_text()
-
-            # if file_details["FileType"] == "application/pdf":
-            #     with st.spinner('Reading the PDF...'):
-            #         doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
-            #         text = ""
-            #         for page in doc:
-            #             text += page.get_text()
-
-            #             # Extract images from the page
-            #             image_list = page.get_images(full=True)
-            #             for img_index, img in enumerate(image_list):
-            #                 xref = img[0]
-            #                 base_image = doc.extract_image(xref)
-            #                 image_bytes = base_image["image"]
-
-            #                 # Convert image bytes to PIL Image
-            #                 image = Image.open(io.BytesIO(image_bytes))
-
-            #                 # Process the image with Azure Form Recognizer
-            #                 extracted_text = ocr_with_azure(image)
-            #                 text += extracted_text + "\n"
+            if file_details["FileType"] == "application/pdf":
+                with st.spinner('Reading the PDF...'):
+                    doc = fitz.open(
+                        stream=uploaded_file.read(), filetype='pdf')
+                    text = ""
+                    for page in doc:
+                        text += page.get_text()
 
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Reading the PDF...'):
@@ -649,6 +636,27 @@ def main():
                             # Process the image with Azure Form Recognizer
                             extracted_text = ocr_with_azure(image)
                             text += extracted_text + "\n"
+
+            # if file_details["FileType"] == "application/pdf":
+            #     with st.spinner('Reading the PDF...'):
+            #         doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
+            #         text = ""
+            #         for page in doc:
+            #             text += page.get_text()
+
+            #             # Extract images from the page
+            #             image_list = page.get_images(full=True)
+            #             for img_index, img in enumerate(image_list):
+            #                 xref = img[0]
+            #                 base_image = doc.extract_image(xref)
+            #                 image_bytes = base_image["image"]
+
+            #                 # Convert image bytes to PIL Image
+            #                 image = Image.open(io.BytesIO(image_bytes))
+
+            #                 # Process the image with Azure Form Recognizer
+            #                 extracted_text = ocr_with_azure(image)
+            #                 text += extracted_text + "\n"
 
             elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
                 with st.spinner('Reading the PowerPoint file...'):
