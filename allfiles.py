@@ -469,7 +469,15 @@ def ocr_with_azure(image):
 
     # Make the API request
     response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
-    response_data = response.json()
+    # Check the response status
+    if response.status_code != 200:
+        st.error(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
+        return ""
+    try:
+        response_data = response.json()
+    except json.decoder.JSONDecodeError:
+        st.error(f"Failed to decode JSON from Azure Form Recognizer API response: {response.text}")
+        return ""
 
     # Extract text from the response
     text_data = []
