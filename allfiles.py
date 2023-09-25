@@ -552,9 +552,10 @@ def main():
             # st.markdown(
             #     f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
             
-            # Pretty front-end
-            response_content = response["choices"][0]["message"]["content"]
-            
+            # Use the typewriter effect function
+            typewritten_response = typewriter_effect(response_content
+                                                    )
+
             # Update the chat history with the new message
             chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> {response_content}<br><br>"
             chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
