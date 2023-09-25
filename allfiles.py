@@ -54,20 +54,25 @@ def ocr_with_azure(image):
     # Make the API request
     response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
     
-    # Check if the request was successful
+    max_retries = 10
+    wait_time = 5
+
+    while response.status_code == 202 and max_retries > 0:
+        time.sleep(wait_time)
+        # This would typically ping the Azure API for status, but since we haven't implemented that, it just repeats the initial request.
+        response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
+        max_retries -= 1
+
     if response.status_code != 200:
         raise Exception(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
 
     response_data = response.json()
-
-    # Extract text from the response
     text_data = []
     for page in response_data.get('analyzeResult', {}).get('readResults', []):
         for line in page.get('lines', []):
             text_data.append(line.get("text", ""))
-
+            
     return "\n".join(text_data)
-
 
 
 # #Powerpoint Processor
