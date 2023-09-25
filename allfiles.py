@@ -456,52 +456,7 @@ class TabularDataProcessor:
 
     #     return expression
 
-AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-AZURE_HEADERS = {
-    "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-    "Content-Type": "image/png"
-}
 
-def ocr_with_azure(image):
-    img_stream = io.BytesIO()
-    image.save(img_stream, format='PNG')
-    img_bytes = img_stream.getvalue()
-
-    # Make the API request
-    response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
-
-    # Check if the request was accepted for processing
-    if response.status_code == 202:
-        operation_location = response.headers.get("Operation-Location")
-        if not operation_location:
-            st.error("Operation-Location header missing in Azure Form Recognizer API response.")
-            return ""
-
-        # Poll the operation status
-        for _ in range(10):  # Poll for a maximum of 10 times (you can adjust this)
-            time.sleep(5)  # Wait for 5 seconds before polling again (you can adjust this)
-            status_response = requests.get(operation_location, headers=AZURE_HEADERS)
-            status_data = status_response.json()
-
-            # Check the status of the operation
-            if status_data.get("status") == "succeeded":
-                # Extract results from the response
-                text_data = []
-                for page in status_data.get('analyzeResult', {}).get('readResults', []):
-                    for line in page.get('lines', []):
-                        text_data.append(line.get("text", ""))
-                return "\n".join(text_data)
-            elif status_data.get("status") == "failed":
-                st.error("Azure Form Recognizer API operation failed.")
-                return ""
-
-        st.error("Timed out waiting for Azure Form Recognizer API operation to complete.")
-        return ""
-
-    else:
-        st.error(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
-        return ""
-        
 def translate(text, target_language='ko'):
     # Use the translation API
     # This function should return translated text
@@ -633,14 +588,6 @@ def main():
                         for shape in slide.shapes:
                             if hasattr(shape, "text"):
                                 text += shape.text + "\n"
-                            # Check if the shape contains an image
-                            if shape.shape_type == 13:  # 13 is the shape type for Picture
-                                img_stream = shape.image.blob
-                                img = Image.open(io.BytesIO(img_stream))
-                                extracted_text = ocr_with_azure(img)
-                                text += extracted_text + "\n"
-
-
 
 
             elif file_details["FileType"] == "text/plain":
