@@ -608,6 +608,27 @@ def main():
             #         for page in doc:
             #             text += page.get_text()
 
+            # if file_details["FileType"] == "application/pdf":
+            #     with st.spinner('Reading the PDF...'):
+            #         doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
+            #         text = ""
+            #         for page in doc:
+            #             text += page.get_text()
+
+            #             # Extract images from the page
+            #             image_list = page.get_images(full=True)
+            #             for img_index, img in enumerate(image_list):
+            #                 xref = img[0]
+            #                 base_image = doc.extract_image(xref)
+            #                 image_bytes = base_image["image"]
+
+            #                 # Convert image bytes to PIL Image
+            #                 image = Image.open(io.BytesIO(image_bytes))
+
+            #                 # Process the image with Azure Form Recognizer
+            #                 extracted_text = ocr_with_azure(image)
+            #                 text += extracted_text + "\n"
+
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Reading the PDF...'):
                     doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
