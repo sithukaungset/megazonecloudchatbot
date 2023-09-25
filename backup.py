@@ -455,7 +455,6 @@ class TabularDataProcessor:
     #     return expression
 
 
-        
 def translate(text, target_language='ko'):
     # Use the translation API
     # This function should return translated text
@@ -545,19 +544,29 @@ def main():
                     {"role": "user", "content": user_input}
                 ]
             )
-            st.markdown(
-                f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
-
+            # st.markdown(
+            #     f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
+            def typewriter_effect(text, delay=0.1):
+                typewritten_text = ""
+                for char in text:
+                    typewritten_text += char
+                    time.sleep(delay)
+                return typewritten_text
             
-           
+            if "choices" in response and response["choices"]:
+                response_content = response["choices"][0]["message"]["content"]
+                
+                # Use the typewriter effect function
+                typewritten_response = typewriter_effect(response_content)
+                    
                                         
-             # Update the chat history with the new message
-            chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> {response_content}<br><br>"
-            chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
+                # Update the chat history with the new message
+                chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> {response_content}<br><br>"
+                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
                 # Insert the question and answer into the database
-            c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
-            conn.commit()
+                c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
+                conn.commit()
 
 
 
@@ -683,21 +692,26 @@ def main():
                 result = qa({"query": user_question})
                 # Display the result in a more noticeable way
                 
-                st.markdown(
-                    f'### Answer: \n {result["result"]}', unsafe_allow_html=True)
-                # if "choices" in result and result["choices"]:
-                #     response_content = result["choices"][0]["message"]["content"]
-                #     response_id = f"response_{hash(response_content)}"
+                # st.markdown(
+                #     f'### Answer: \n {result["result"]}', unsafe_allow_html=True)
+                if "choices" in result and result["choices"]:
+                    response_content = result["choices"][0]["message"]["content"]
+                    response_id = f"response_{hash(response_content)}"
 
                     # Update the chat history with the new message
-                chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> <div id='{response_id}'></div><br><br>"
-                chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
+                    chat_history += f"<strong>User :</strong> {user_input}<br><strong>ChatBot :</strong> <div id='{response_id}'></div><br><br>"
+                    chat_placeholder.markdown(chat_history, unsafe_allow_html=True)
 
                     # Insert the question and answer into the database
-                c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
-                conn.commit()
+                    c.execute("INSERT INTO chat_history VALUES (?,?)", (user_input, response_content))
+                    conn.commit()
 
-                  
+                    # Use the typewrite function for the typewriter effect
+                    typewritten_response = typewriter_effect(response_content)
+                    st.components.v1.html(typewritten_response, height=400, scrolling=True)
+
+                else:
+                    st.write("Sorry, I couldn't generate a response for that question.")
 
 
 
