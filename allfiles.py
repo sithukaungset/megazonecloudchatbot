@@ -280,7 +280,7 @@ def main():
                     # for section, content in segments.items():
                     #         if content:
                     #             st.write(f"{section.capitalize()}:\n{content}\n")
-                    text = " ".join(segments.values())  # Assuming segments is a dict where values are the text
+                    text = "\n".join(filter(None, segments.values()))  # Assuming segments is a dict where values are the text
 
 
 
