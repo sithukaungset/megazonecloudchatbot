@@ -469,24 +469,38 @@ def ocr_with_azure(image):
 
     # Make the API request
     response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
-    # Check the response status
-    if response.status_code != 200:
+
+    # Check if the request was accepted for processing
+    if response.status_code == 202:
+        operation_location = response.headers.get("Operation-Location")
+        if not operation_location:
+            st.error("Operation-Location header missing in Azure Form Recognizer API response.")
+            return ""
+
+        # Poll the operation status
+        for _ in range(10):  # Poll for a maximum of 10 times (you can adjust this)
+            time.sleep(5)  # Wait for 5 seconds before polling again (you can adjust this)
+            status_response = requests.get(operation_location, headers=AZURE_HEADERS)
+            status_data = status_response.json()
+
+            # Check the status of the operation
+            if status_data.get("status") == "succeeded":
+                # Extract results from the response
+                text_data = []
+                for page in status_data.get('analyzeResult', {}).get('readResults', []):
+                    for line in page.get('lines', []):
+                        text_data.append(line.get("text", ""))
+                return "\n".join(text_data)
+            elif status_data.get("status") == "failed":
+                st.error("Azure Form Recognizer API operation failed.")
+                return ""
+
+        st.error("Timed out waiting for Azure Form Recognizer API operation to complete.")
+        return ""
+
+    else:
         st.error(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
         return ""
-    try:
-        response_data = response.json()
-    except json.decoder.JSONDecodeError:
-        st.error(f"Failed to decode JSON from Azure Form Recognizer API response: {response.text}")
-        return ""
-
-    # Extract text from the response
-    text_data = []
-    for page in response_data.get('analyzeResult', {}).get('readResults', []):
-        for line in page.get('lines', []):
-            text_data.append(line.get("text", ""))
-
-    return "\n".join(text_data)
-
         
 def translate(text, target_language='ko'):
     # Use the translation API
