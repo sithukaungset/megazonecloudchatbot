@@ -40,7 +40,8 @@ def ocr_with_azure(image):
         "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
         "Content-Type": "image/png"
     }
-     # Check and resize the image if its dimensions are outside the acceptable range
+
+    # Resize the image if needed
     width, height = image.size
     if width < 50 or height < 50:
         image = image.resize((max(50, width), max(50, height)))
@@ -51,24 +52,37 @@ def ocr_with_azure(image):
     image.save(img_stream, format='PNG')
     img_bytes = img_stream.getvalue()
 
-    # Make the API request
     response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
+    
+    if response.status_code != 202:
+        raise Exception(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
+
+    # Extract operation location URL from headers to check status
+    operation_location = response.headers.get("Operation-Location")
+    if not operation_location:
+        raise Exception("Operation-Location header not found in the response.")
     
     max_retries = 10
     wait_time = 5
 
-    while response.status_code == 202 and max_retries > 0:
+    while max_retries > 0:
         time.sleep(wait_time)
-        # This would typically ping the Azure API for status, but since we haven't implemented that, it just repeats the initial request.
-        response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
+        status_response = requests.get(operation_location, headers=AZURE_HEADERS)
+        status_data = status_response.json()
+        status = status_data.get("status")
+        
+        if status == "succeeded":
+            break
+        elif status in ["failed", "invalid"]:
+            raise Exception(f"OCR processing failed: {status_data.get('error', {}).get('message', 'No error message available.')}")
+        
         max_retries -= 1
 
-    if response.status_code != 200:
-        raise Exception(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
+    if max_retries == 0:
+        raise Exception("OCR processing did not complete in the expected time.")
 
-    response_data = response.json()
     text_data = []
-    for page in response_data.get('analyzeResult', {}).get('readResults', []):
+    for page in status_data.get('analyzeResult', {}).get('readResults', []):
         for line in page.get('lines', []):
             text_data.append(line.get("text", ""))
             
