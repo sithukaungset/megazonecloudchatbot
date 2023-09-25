@@ -46,7 +46,7 @@ def ocr_with_azure(image):
         image = image.resize((max(50, width), max(50, height)))
     elif width > 10000 or height > 10000:
         image = image.resize((min(10000, width), min(10000, height)))
-        
+
     img_stream = io.BytesIO()
     image.save(img_stream, format='PNG')
     img_bytes = img_stream.getvalue()
@@ -608,13 +608,13 @@ def main():
                             "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
             st.write(file_details)
 
-            if file_details["FileType"] == "application/pdf":
-                with st.spinner('Reading the PDF...'):
-                    doc = fitz.open(
-                        stream=uploaded_file.read(), filetype='pdf')
-                    text = ""
-                    for page in doc:
-                        text += page.get_text()
+            # if file_details["FileType"] == "application/pdf":
+            #     with st.spinner('Reading the PDF...'):
+            #         doc = fitz.open(
+            #             stream=uploaded_file.read(), filetype='pdf')
+            #         text = ""
+            #         for page in doc:
+            #             text += page.get_text()
 
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Reading the PDF...'):
