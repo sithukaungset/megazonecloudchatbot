@@ -34,6 +34,29 @@ from PIL import Image
 import time
 
 
+def ocr_with_azure(self, image):
+    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
+    AZURE_HEADERS = {
+        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
+        "Content-Type": "image/png"
+    }
+    
+    img_stream = io.BytesIO()
+    image.save(img_stream, format='PNG')
+    img_bytes = img_stream.getvalue()
+
+    # Make the API request
+    response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
+    response_data = response.json()
+
+    # Extract text from the response
+    text_data = []
+    for page in response_data.get('analyzeResult', {}).get('readResults', []):
+        for line in page.get('lines', []):
+            text_data.append(line.get("text", ""))
+
+    return "\n".join(text_data)
+
 # #Powerpoint Processor
 # class PowerPointProcessor:
 
@@ -590,6 +613,12 @@ def main():
                         for shape in slide.shapes:
                             if hasattr(shape, "text"):
                                 text += shape.text + "\n"
+                            # Check if the shape contains an image
+                            if shape.shape_type == 13:  # 13 is the shape type for Picture
+                                img_stream = shape.image.blob
+                                img = Image.open(io.BytesIO(img_stream))
+                                extracted_text = ocr_with_azure(img)
+                                text += extracted_text + "\n"
 
 
 
