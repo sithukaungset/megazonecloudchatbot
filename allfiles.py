@@ -34,59 +34,59 @@ from PIL import Image
 import time
 
 
-def ocr_with_azure(image):
-    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-    AZURE_HEADERS = {
-        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-        "Content-Type": "image/png"
-    }
+# def ocr_with_azure(image):
+#     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
+#     AZURE_HEADERS = {
+#         "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
+#         "Content-Type": "image/png"
+#     }
 
-    # Resize the image if needed
-    width, height = image.size
-    if width < 50 or height < 50:
-        image = image.resize((max(50, width), max(50, height)))
-    elif width > 10000 or height > 10000:
-        image = image.resize((min(10000, width), min(10000, height)))
+#     # Resize the image if needed
+#     width, height = image.size
+#     if width < 50 or height < 50:
+#         image = image.resize((max(50, width), max(50, height)))
+#     elif width > 10000 or height > 10000:
+#         image = image.resize((min(10000, width), min(10000, height)))
 
-    img_stream = io.BytesIO()
-    image.save(img_stream, format='PNG')
-    img_bytes = img_stream.getvalue()
+#     img_stream = io.BytesIO()
+#     image.save(img_stream, format='PNG')
+#     img_bytes = img_stream.getvalue()
 
-    response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
+#     response = requests.post(AZURE_ENDPOINT, headers=AZURE_HEADERS, data=img_bytes)
     
-    if response.status_code != 202:
-        raise Exception(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
+#     if response.status_code != 202:
+#         raise Exception(f"Error from Azure Form Recognizer API: {response.status_code} - {response.text}")
 
-    # Extract operation location URL from headers to check status
-    operation_location = response.headers.get("Operation-Location")
-    if not operation_location:
-        raise Exception("Operation-Location header not found in the response.")
+#     # Extract operation location URL from headers to check status
+#     operation_location = response.headers.get("Operation-Location")
+#     if not operation_location:
+#         raise Exception("Operation-Location header not found in the response.")
     
-    max_retries = 10
-    wait_time = 5
+#     max_retries = 10
+#     wait_time = 5
 
-    while max_retries > 0:
-        time.sleep(wait_time)
-        status_response = requests.get(operation_location, headers=AZURE_HEADERS)
-        status_data = status_response.json()
-        status = status_data.get("status")
+#     while max_retries > 0:
+#         time.sleep(wait_time)
+#         status_response = requests.get(operation_location, headers=AZURE_HEADERS)
+#         status_data = status_response.json()
+#         status = status_data.get("status")
         
-        if status == "succeeded":
-            break
-        elif status in ["failed", "invalid"]:
-            raise Exception(f"OCR processing failed: {status_data.get('error', {}).get('message', 'No error message available.')}")
+#         if status == "succeeded":
+#             break
+#         elif status in ["failed", "invalid"]:
+#             raise Exception(f"OCR processing failed: {status_data.get('error', {}).get('message', 'No error message available.')}")
         
-        max_retries -= 1
+#         max_retries -= 1
 
-    if max_retries == 0:
-        raise Exception("OCR processing did not complete in the expected time.")
+#     if max_retries == 0:
+#         raise Exception("OCR processing did not complete in the expected time.")
 
-    text_data = []
-    for page in status_data.get('analyzeResult', {}).get('readResults', []):
-        for line in page.get('lines', []):
-            text_data.append(line.get("text", ""))
+#     text_data = []
+#     for page in status_data.get('analyzeResult', {}).get('readResults', []):
+#         for line in page.get('lines', []):
+#             text_data.append(line.get("text", ""))
             
-    return "\n".join(text_data)
+#     return "\n".join(text_data)
 
 
 # #Powerpoint Processor
@@ -627,34 +627,34 @@ def main():
                             "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
             st.write(file_details)
 
-            # if file_details["FileType"] == "application/pdf":
-            #     with st.spinner('Reading the PDF...'):
-            #         doc = fitz.open(
-            #             stream=uploaded_file.read(), filetype='pdf')
-            #         text = ""
-            #         for page in doc:
-            #             text += page.get_text()
-
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Reading the PDF...'):
-                    doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
+                    doc = fitz.open(
+                        stream=uploaded_file.read(), filetype='pdf')
                     text = ""
                     for page in doc:
                         text += page.get_text()
 
-                        # Extract images from the page
-                        image_list = page.get_images(full=True)
-                        for img_index, img in enumerate(image_list):
-                            xref = img[0]
-                            base_image = doc.extract_image(xref)
-                            image_bytes = base_image["image"]
+            # if file_details["FileType"] == "application/pdf":
+            #     with st.spinner('Reading the PDF...'):
+            #         doc = fitz.open(stream=uploaded_file.read(), filetype='pdf')
+            #         text = ""
+            #         for page in doc:
+            #             text += page.get_text()
 
-                            # Convert image bytes to PIL Image
-                            image = Image.open(io.BytesIO(image_bytes))
+            #             # Extract images from the page
+            #             image_list = page.get_images(full=True)
+            #             for img_index, img in enumerate(image_list):
+            #                 xref = img[0]
+            #                 base_image = doc.extract_image(xref)
+            #                 image_bytes = base_image["image"]
 
-                            # Process the image with Azure Form Recognizer
-                            extracted_text = ocr_with_azure(image)
-                            text += extracted_text + "\n"
+            #                 # Convert image bytes to PIL Image
+            #                 image = Image.open(io.BytesIO(image_bytes))
+
+            #                 # Process the image with Azure Form Recognizer
+            #                 extracted_text = ocr_with_azure(image)
+            #                 text += extracted_text + "\n"
 
             # if file_details["FileType"] == "application/pdf":
             #     with st.spinner('Reading the PDF...'):
