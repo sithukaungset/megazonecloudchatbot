@@ -91,190 +91,190 @@ class PowerPointProcessor:
         return text.strip() # return text, removing extra spaces
 
 # PDF Processor
-class PDFProcessor:
-    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-    AZURE_HEADERS = {
-        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-        "Content-Type": "image/png"
-    }
+# class PDFProcessor:
+#     AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
+#     AZURE_HEADERS = {
+#         "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
+#         "Content-Type": "image/png"
+#     }
 
-    def ocr_with_azure(self, image):
-        """
-        Use Azure Form Recognizer to extract text from the given image.
-        """
+#     def ocr_with_azure(self, image):
+#         """
+#         Use Azure Form Recognizer to extract text from the given image.
+#         """
 
-        # Convert the image to a PNG format using Pillow
-        img_stream = io.BytesIO()
-        image.save(img_stream, format='PNG')
-        img_bytes = img_stream.getvalue()
+#         # Convert the image to a PNG format using Pillow
+#         img_stream = io.BytesIO()
+#         image.save(img_stream, format='PNG')
+#         img_bytes = img_stream.getvalue()
         
-        # Make the API request
-        response = requests.post(
-            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=img_bytes)
-        response_data = response.json()
+#         # Make the API request
+#         response = requests.post(
+#             self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=img_bytes)
+#         response_data = response.json()
 
-        # Extract from the response. Depending on the structure of the response data,
-        text_data = []
-        for page in response_data.get('analyzeResult', {}).get('readResults', []):
-            for line in page.get('lines', []):
-                text_data.append(line.get('text', ''))
+#         # Extract from the response. Depending on the structure of the response data,
+#         text_data = []
+#         for page in response_data.get('analyzeResult', {}).get('readResults', []):
+#             for line in page.get('lines', []):
+#                 text_data.append(line.get('text', ''))
         
-        return "\n".join(text_data)
+#         return "\n".join(text_data)
     
-    def ocr_pdf(self, pdf_path):
-        """
-        Convert a PDF into images and then use Azure to extract text.
-        Return the combined text from all pages.
-        """
+#     def ocr_pdf(self, pdf_path):
+#         """
+#         Convert a PDF into images and then use Azure to extract text.
+#         Return the combined text from all pages.
+#         """
         
 
-        # Convert PDF to a list of images
-        images = convert_from_path(pdf_path)
+#         # Convert PDF to a list of images
+#         images = convert_from_path(pdf_path)
 
-        # OCR each image to extract text using Azure
-        texts = [self.ocr_with_azure(img) for img in images]
+#         # OCR each image to extract text using Azure
+#         texts = [self.ocr_with_azure(img) for img in images]
 
-        # Combine the texts from all pages
-        combined_text = "\n".join(texts)
+#         # Combine the texts from all pages
+#         combined_text = "\n".join(texts)
 
-        return combined_text
+#         return combined_text
     
-    def extract_text_from_pdf(self, pdf_stream):
-        doc = fitz.open(stream=pdf_stream, filetype='pdf')
-        text = ""
-        for page in doc:
-            text += page.get_text("text", clip=page.rect, flags=fitz.TEXT_PRESERVE_LIGATURES)
-        return text
+#     def extract_text_from_pdf(self, pdf_stream):
+#         doc = fitz.open(stream=pdf_stream, filetype='pdf')
+#         text = ""
+#         for page in doc:
+#             text += page.get_text("text", clip=page.rect, flags=fitz.TEXT_PRESERVE_LIGATURES)
+#         return text
     
-    def remove_headers_and_footers(self, text):
-        # A very basic method: remove the first and last line from each page, assuming they might be headers/footers.
-        # This might need more advanced logic, possibly using patterns or machine learning models.
-        # Split text into pages
-        pages = text.split("\n\n")
-        # For each page, remove the first and last lines if they exist
-        cleaned_pages = []
-        for page in pages:
-            lines = page.split('\n')
-            # Check if the page has more than 2 lines, if so, remove the first and last lines.
-            # Otherwise, just use the lines as they are.
-            cleaned_page = lines[1:-1] if len(lines) > 2 else lines
-            cleaned_pages.append("\n".join(cleaned_page))
+#     def remove_headers_and_footers(self, text):
+#         # A very basic method: remove the first and last line from each page, assuming they might be headers/footers.
+#         # This might need more advanced logic, possibly using patterns or machine learning models.
+#         # Split text into pages
+#         pages = text.split("\n\n")
+#         # For each page, remove the first and last lines if they exist
+#         cleaned_pages = []
+#         for page in pages:
+#             lines = page.split('\n')
+#             # Check if the page has more than 2 lines, if so, remove the first and last lines.
+#             # Otherwise, just use the lines as they are.
+#             cleaned_page = lines[1:-1] if len(lines) > 2 else lines
+#             cleaned_pages.append("\n".join(cleaned_page))
 
-        # Join the cleaned pages back into a single text
-        cleaned_text = "\n".join(cleaned_pages)
-        return cleaned_text
+#         # Join the cleaned pages back into a single text
+#         cleaned_text = "\n".join(cleaned_pages)
+#         return cleaned_text
         
 
-    def enhanced_segment_content(self, text):
-        # Define potential section headers and their variations
-        sections = {
-            "introduction": ["introduction", "intro", "background"],
-            "methods": ["methods", "methodology", "experimental", "experiment","materials and methods"],
-            "results": ["results","findings", "outcome"],
-            "discussion": ["discussion","analysis"],
-            "references": ["references", "bibliography","citations"],
-            "acknowledgments": ["acknowledgments", "acknowledgement","thanks","gratitude"]
-        }
+#     def enhanced_segment_content(self, text):
+#         # Define potential section headers and their variations
+#         sections = {
+#             "introduction": ["introduction", "intro", "background"],
+#             "methods": ["methods", "methodology", "experimental", "experiment","materials and methods"],
+#             "results": ["results","findings", "outcome"],
+#             "discussion": ["discussion","analysis"],
+#             "references": ["references", "bibliography","citations"],
+#             "acknowledgments": ["acknowledgments", "acknowledgement","thanks","gratitude"]
+#         }
 
-        segments = {key: None for key in sections.keys()}
+#         segments = {key: None for key in sections.keys()}
 
-        # Convert the text to lower case for case insensitive search
-        lower_text = text.lower()
+#         # Convert the text to lower case for case insensitive search
+#         lower_text = text.lower()
 
-        # For each section, find the starting index using its potential headers
-        indices = {}
-        for section, patterns in sections.items():
-            indices[section] = float('inf')  # initialize with "infinity"
-            for pattern in patterns:
-                idx = lower_text.find(pattern)
-                if idx != -1 and idx < indices[section]:  # Update with the smallest index found
-                    indices[section] = idx
+#         # For each section, find the starting index using its potential headers
+#         indices = {}
+#         for section, patterns in sections.items():
+#             indices[section] = float('inf')  # initialize with "infinity"
+#             for pattern in patterns:
+#                 idx = lower_text.find(pattern)
+#                 if idx != -1 and idx < indices[section]:  # Update with the smallest index found
+#                     indices[section] = idx
 
-        # Sort sections by their starting index
-        sorted_sections = sorted(indices.items(), key=lambda x: x[1])
+#         # Sort sections by their starting index
+#         sorted_sections = sorted(indices.items(), key=lambda x: x[1])
 
-        # Extract content for each section based on the detected starting indices
-        for i, (section, start_idx) in enumerate(sorted_sections):
-            if start_idx == float('inf'):  # If section was not found
-                continue
+#         # Extract content for each section based on the detected starting indices
+#         for i, (section, start_idx) in enumerate(sorted_sections):
+#             if start_idx == float('inf'):  # If section was not found
+#                 continue
 
-            # Set end index to start of next section or end of text
-            end_idx = sorted_sections[i+1][1] if i+1 < len(sorted_sections) else len(text)
+#             # Set end index to start of next section or end of text
+#             end_idx = sorted_sections[i+1][1] if i+1 < len(sorted_sections) else len(text)
 
-            # Ensure both start_idx and end_idx are valid integers before slicing
-            if isinstance(start_idx, int) and isinstance(end_idx, int):
-                segments[section] = text[start_idx:end_idx].strip()
+#             # Ensure both start_idx and end_idx are valid integers before slicing
+#             if isinstance(start_idx, int) and isinstance(end_idx, int):
+#                 segments[section] = text[start_idx:end_idx].strip()
 
-        return segments
+#         return segments
 
     
 
-    # Mathematical Section for preprocessing Maths related texts
+#     # Mathematical Section for preprocessing Maths related texts
 
-    def identify_math_expressions(self, text):
-        """
-        A simple function to identity mathematical expressions.
-        This is a very basic way to identify mathematical content using the presence of '='
-        Depending on our needs, this might need to be refined.
-        """
-        math_expressions = []
-        for line in text.split('\n'):
-            if '=' in line:
-                math_expressions.append(line)
-            return math_expressions
+#     def identify_math_expressions(self, text):
+#         """
+#         A simple function to identity mathematical expressions.
+#         This is a very basic way to identify mathematical content using the presence of '='
+#         Depending on our needs, this might need to be refined.
+#         """
+#         math_expressions = []
+#         for line in text.split('\n'):
+#             if '=' in line:
+#                 math_expressions.append(line)
+#             return math_expressions
         
-    def process_math_expressions(self, math_expressions):
-        """
-        Process the identified mathematical expressions using Azure OCR or any other processing methods
+#     def process_math_expressions(self, math_expressions):
+#         """
+#         Process the identified mathematical expressions using Azure OCR or any other processing methods
         
-        1. Evaluation, 2. Simplication, 3. Transcription to LaTex"""
-        processed_expressions = {}
+#         1. Evaluation, 2. Simplication, 3. Transcription to LaTex"""
+#         processed_expressions = {}
     
-        for expression in math_expressions:
-            print(expression)
-            expression_data = {}
+#         for expression in math_expressions:
+#             print(expression)
+#             expression_data = {}
 
-            # Evaluation
-            try: 
-                expression_data["evaluated"] = sp.sympify(expression).evalf()
-            except Exception as e:
-                expression_data["evaluated"] = str(e)
+#             # Evaluation
+#             try: 
+#                 expression_data["evaluated"] = sp.sympify(expression).evalf()
+#             except Exception as e:
+#                 expression_data["evaluated"] = str(e)
 
-            # Simplification
-            try:
-                expression_data["simplified"] = sp.sympify(expression).simplify()
-            except Exception as e:
-                expression_data["simplified"] = str(e)
+#             # Simplification
+#             try:
+#                 expression_data["simplified"] = sp.sympify(expression).simplify()
+#             except Exception as e:
+#                 expression_data["simplified"] = str(e)
 
-            # Transcription to Latex
-            try:
-                expression_data["latex"] = sp.latex(sp.sympify(expression))
-            except Exception as e:
-                expression_data["latex"] = str(e)
+#             # Transcription to Latex
+#             try:
+#                 expression_data["latex"] = sp.latex(sp.sympify(expression))
+#             except Exception as e:
+#                 expression_data["latex"] = str(e)
 
-            processed_expressions[expression] = expression_data
+#             processed_expressions[expression] = expression_data
         
-        return processed_expressions
+#         return processed_expressions
     
-    # Now when we call 'process math expressions', it will return a dictionary with each original
-    # expression as the key.The value for each key will be another dictionary containing the evaluated,
-    # simplified and LaTex transcribed results.
+#     # Now when we call 'process math expressions', it will return a dictionary with each original
+#     # expression as the key.The value for each key will be another dictionary containing the evaluated,
+#     # simplified and LaTex transcribed results.
 
 
-    def process_pdf_stream(self, pdf_stream):
-        # Extract text from the PDF using fitz
-        text = self.extract_text_from_pdf(pdf_stream)
+#     def process_pdf_stream(self, pdf_stream):
+#         # Extract text from the PDF using fitz
+#         text = self.extract_text_from_pdf(pdf_stream)
 
-        # Remove headers and footers
-        text = self.remove_headers_and_footers(text)
+#         # Remove headers and footers
+#         text = self.remove_headers_and_footers(text)
 
-        # Segment content using the enhanced method
-        segments =self.enhanced_segment_content(text)
+#         # Segment content using the enhanced method
+#         segments =self.enhanced_segment_content(text)
 
-        math_expressions = self.identify_math_expressions(text)
-        self.process_math_expressions(math_expressions)
+#         math_expressions = self.identify_math_expressions(text)
+#         self.process_math_expressions(math_expressions)
 
-        return segments
+#         return segments
 
 
 
@@ -576,14 +576,12 @@ def main():
             st.write(file_details)
 
             if file_details["FileType"] == "application/pdf":
-                with st.spinner('Processing the PDF...'):
-                    # Using the process_pdf_stream method to extract and segment text from the PDF
-                    segments = pdf_processor.process_pdf_stream(uploaded_file.read())
-            
-                    # for section, content in segments.items():
-                    #     if content:
-                    #         st.write(f"{section.capitalize()}:\n{content}\n")
-                    text = "\n".join(filter(None, segments.values()))
+                with st.spinner('Reading the PDF...'):
+                    doc = fitz.open(
+                        stream=uploaded_file.read(), filetype='pdf')
+                    text = ""
+                    for page in doc:
+                        text += page.get_text()
 
 
             elif file_details["FileType"] in ["application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"]:
