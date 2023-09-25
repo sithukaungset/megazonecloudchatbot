@@ -32,13 +32,14 @@ import json
 # PDF Processor
 class PDFProcessor:
     
-    def extract_text_from_pdf(self, pdf_stream):
-        doc = fitz.open(stream=pdf_stream, filetype='pdf')
+    def extract_text_from_pdf(self, uploaded_file):
+        pdf_bytes = uploaded_file.read()
+        doc = fitz.open("pdf", pdf_bytes)
         text = ""
         for page in doc:
             text += page.get_text("text")
         return text
-    
+
     def remove_headers_and_footers(self, text):
         # This method can be expanded with more advanced logic if needed.
         pages = text.split("\n\n")
