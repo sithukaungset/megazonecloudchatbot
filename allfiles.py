@@ -24,7 +24,7 @@ import pytesseract
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_path
 import re
-#import cv2
+import cv2
 import base64
 import requests
 import json
