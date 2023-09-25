@@ -37,7 +37,7 @@ class PDFProcessor:
     
     # Azure OCR API call
     def azure_ocr(self, image_data, azure_endpoint, azure_key):
-        ocr_url = azure_endpoint + "/formrecognizer/v2.1/prebuilt/receipt/analyze"
+        ocr_url = azure_endpoint 
         headers = {
             'Ocp-Apim-Subscription-Key': azure_key,
             'Content-Type': 'application/octet-stream'
