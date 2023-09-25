@@ -546,7 +546,7 @@ def main():
             )
             # st.markdown(
             #     f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
-            def typewriter_effect(text, delay=1):
+            def typewriter_effect(text, delay=0.1):
                 typewritten_text = ""
                 for char in text:
                     typewritten_text += char
