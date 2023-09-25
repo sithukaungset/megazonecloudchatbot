@@ -35,12 +35,7 @@ from PIL import Image
 import time
 
 
-def typewriter_effect(text, delay=0.1):
-    typewritten_text = ""
-    for char in text:
-        typewriter_text += char
-        time.sleep(delay)
-    return typewritten_text
+
     
 
 #Powerpoint Processor
@@ -551,6 +546,12 @@ def main():
             )
             # st.markdown(
             #     f'### Answer: \n {response["choices"][0]["message"]["content"]}', unsafe_allow_html=True)
+            def typewriter_effect(text, delay=0.1):
+                typewritten_text = ""
+                for char in text:
+                    typewriter_text += char
+                    time.sleep(delay)
+                return typewritten_text
             
             if "choices" in response and response["choices"]:
                 response_content = response["choices"][0]["message"]["content"]
