@@ -31,107 +31,40 @@ import json
 
 # PDF Processor
 class PDFProcessor:
-    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"
-    AZURE_HEADERS = {
-        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-        "Content-Type": "image/png"
-    }
-
-    def ocr_with_azure(self, image):
-        """
-        Use Azure Form Recognizer to extract text from the given image.
-        """
-
-        # Convert the image to a PNG format
-        _, img_encoded = cv2.imencode('.png', image)
-        img_bytes = img_encoded.tobytes()
-        
-        # Make the API request
-        response = requests.post(
-            self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data = img_bytes)
-        response_data = response.json()
-
-        # Extract from the response. Depending on the structure of the response data,
-        text_data = []
-        for page in response.data.get('analyzeResult', {}).get('readResults', []):
-            for line in page.get('lines', []):
-                text_data.append(line.get('text', ''))
-        
-        return "\n".join(text_data)
-    
-    def ocr_pdf(self, pdf_path):
-        """
-        Convert a PDF into images and then use Azure to extract text.
-        Return the combined text from all pages.
-        """
-        from pdf2image import convert_from_path
-
-        # Convert PDF to a list of images
-        images = convert_from_path(pdf_path)
-
-        # OCR each image to extract text using Azure
-        texts = [self.ocr_with_azure(img) for img in images]
-
-        # Combine the texts from all pages
-        combined_text = "\n".join(texts)
-
-        return combined_text
     
     def extract_text_from_pdf(self, pdf_stream):
         doc = fitz.open(stream=pdf_stream, filetype='pdf')
         text = ""
         for page in doc:
-            text += page.get_text("text", clip=page.rect, flags=fitz.TEXT_PRESERVE_LIGATURES)
+            text += page.get_text("text")
         return text
     
     def remove_headers_and_footers(self, text):
-        # A very basic method: remove the first and last line from each page, assuming they might be headers/footers.
-        # This might need more advanced logic, possibly using patterns or machine learning models.
-        # Split text into pages
+        # This method can be expanded with more advanced logic if needed.
         pages = text.split("\n\n")
-        # For each page, remove the first and last lines if they exist
-        cleaned_pages = []
-        for page in pages:
-            lines = page.split('\n')
-            # Check if the page has more than 2 lines, if so, remove the first and last lines.
-            # Otherwise, just use the lines as they are.
-            cleaned_page = lines[1:-1] if len(lines) > 2 else lines
-            cleaned_pages.append("\n".join(cleaned_page))
-
-        # Join the cleaned pages back into a single text
-        cleaned_text = "\n".join(cleaned_pages)
-        return cleaned_text
-        
+        cleaned_pages = [ "\n".join(page.split('\n')[1:-1]) for page in pages if len(page.split('\n')) > 2]
+        return "\n\n".join(cleaned_pages)
 
     def segment_content(self, text):
-        # Example segmentation - you can further enhance this
-        segments = {
-            "introduction": None,
-            "methods": None,
-            "results": None,
-            "discussion": None,
-            "references": None
-        }
-
-        # Split based on some common section titles. This is simplistic and might not work for all papers.
-        for section in segments.keys():
+        # This method can be enhanced to capture more sections accurately.
+        sections = ["introduction", "methods", "results", "discussion", "references"]
+        segments = {}
+        
+        for i, section in enumerate(sections):
             start_idx = text.lower().find(section)
+            end_idx = text.lower().find(sections[i+1]) if i+1 < len(sections) else None
+            
             if start_idx != -1:
-                end_idx = text.find("\n\n", start_idx)
                 segments[section] = text[start_idx:end_idx].strip()
+            else:
+                segments[section] = None
 
         return segments
 
-    def process_pdf_stream(self, pdf_stream):
-        # Extract text from the PDF using fitz
+    def process_pdf(self, pdf_stream):
         text = self.extract_text_from_pdf(pdf_stream)
-        
-        # Remove headers and footers
         text = self.remove_headers_and_footers(text)
-        
-        # Segment content
         segments = self.segment_content(text)
-        
         return segments
 
 
@@ -220,100 +153,7 @@ class TabularDataProcessor:
             text += " .".join(self.transform_to_sentences()) + ". "
 
         return text
-    
-    
 
-    # MATHPIX_ENDPOINT = "https://api.mathpix.com/v3/text"
-    # MATHPIX_HEADERS = {
-    #     "app_id": "MY_APP_ID",
-    #     "app_key": "MY_APP_KEY",
-    #     "Content-type": "application/json"
-    # }
-
-    # def ocr_with_mathpix(self, image):
-    #     """
-    #     Use Mathpix API to extract text from the given image.
-    #     """
-    #     # Convert the image to a base64 string
-    #     _, img_encoded = cv2.imencode('.png', image)
-    #     img_str = base64.b64encode(img_encoded).decode('utf-8')
-
-    #     # Create payload for API request
-    #     payload = {
-    #         "src": f"data:image/png;base64, {img_str}"
-    #     }
-    #     response = requests.post(
-    #         self.MATHPIX_ENDPOINT, headers=self.MATHPIX_HEADERS, data=json.dumps(payload))
-    #     response_data = response.json()
-
-    #     # Extract text from the response, handle errors appropriately
-    #     return response_data('text', '')
-
-    # def ocr_pdf(self, pdf_path):
-    #     """
-    #     Convert a PDF into images and then use Mathpix to extract text.
-    #     Return the combined text from all pages.
-    #     """
-
-    #     # Convert PDF to a list of images
-    #     images = convert_from_path(pdf_path)
-
-    #     # OCR each image to extract text using Mathpix
-    #     texts = [self.ocr_with_mathpix(img) for img in images]
-
-    #     # Combine the texts from all pages
-    #     combined_text = "/n".join(texts)
-
-    #     return combined_text
-
-    # def ocr_pdf(self, pdf_path):
-    #     """ 
-    #     Convert a PDF into images and then use OCR to extract text.
-    #     Return the combined text from all pages.
-    #     """
-
-    #     # Convert PDF to a list of images
-    #     images = convert_from_path(pdf_path)
-
-    #     # OCR each image to extract text
-    #     texts = [pytesseract.image_to_string(img) for img in images]
-
-    #     # Combine the texts from all pages
-    #     combined_text = "/n".join(texts)
-
-    #     return combined_text
-
-    # def process_pdf(self, pdf_path):
-    #     """
-    #     Process a PDF file using OCR and then preprocess any potential mathematical expressions.
-    #     """
-    #     # Extract text from the PDF using OCR
-    #     ocr_text = self.ocr_pdf(pdf_path)
-
-    #     # Split the OCR text into lines and preprocess each line individually
-    #     preprocessed_lines = [self.preprocess_math_expression(
-    #         line) for line in ocr_text.split("n")]
-
-    #     # Combined the preprocessed lines back into a single string
-    #     preprocessed_text = "\n".join(preprocessed_lines)
-
-    #     return preprocessed_text
-
-    # def preprocess_math_expression(self, expression):
-    #     # Check if the input is a string, if not, return as is
-    #     if not isinstance(expression, str):
-    #         return expression
-
-    #     # Remove any extra spaces
-    #     expression = expression.lower().strip()
-
-    #     # Add spaces around operators for better tokenization
-    #     expression = re.sub(r'(\+|\-|\*|\/|\=|\(|\))', r' \1 ', expression)
-
-    #     # Remove any extra spaces around numbers and variables
-    #     expression = re.sub(r'/s+', ' ', expression).strip()
-
-    #     return expression
 
 
 def translate(text, target_language='ko'):
@@ -434,13 +274,12 @@ def main():
             st.write(file_details)
 
             if file_details["FileType"] == "application/pdf":
-                with st.spinner('Processing the PDF...'):
-                    # Using the process_pdf_stream method to extract and segment text from the PDF
-                    segments = pdf_processor.process_pdf_stream(uploaded_file.read())
-            
+                 with st.spinner('Processing the PDF...'):
+                    segments = pdf_processor.process_pdf(uploaded_file)
                     for section, content in segments.items():
-                        if content:
-                            st.write(f"{section.capitalize()}:\n{content}\n")
+                            if content:
+                                st.write(f"{section.capitalize()}:\n{content}\n")
+
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
