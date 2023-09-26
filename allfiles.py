@@ -376,6 +376,9 @@ def main():
             # load the faiss vector store we saved into memory
             with st.spinner('Creating knowledge base...'):
                 vectorStore = FAISS.from_texts(chunks, embeddings)
+                print(f"Text length: {len(text)}")
+                print(f"Number of chunks: {len(chunks)}")
+
 
             # use the faiss vector store we saved to search the local document
             retriever = vectorStore.as_retriever(
