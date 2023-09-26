@@ -20,4 +20,4 @@ requests
 python-pptx
 sympy
 Pillow
-sqlite3
+
