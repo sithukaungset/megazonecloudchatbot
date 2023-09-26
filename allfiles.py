@@ -39,38 +39,27 @@ import tempfile
 # PDF Processor
 class PDFProcessor:
     
-
-    def ocropus_ocr(self, image_path):
-        # Use OCRopus to extract text
-        output_txt = tempfile.mktemp(".txt")
-        try:
-            subprocess.check_call(["ocropus-rpred", "-Q 4", "-m", "en-default.pyrnn.gz", image_path])
-            with open(output_txt, 'r') as f:
-                return f.read()
-        finally:
-            if os.path.exists(output_txt):
-                os.remove(output_txt)
-
-    def extract_text_from_pdf(self, uploaded_file):
-        pdf_bytes = uploaded_file.read()
-        doc = fitz.open("pdf", pdf_bytes)
+    def extract_text_from_pdf(self, pdf_stream):
+        reader = PyPDF2.PdfFileReader(pdf_stream)
         text = ""
-        for page in doc:
-            # Extract text using MuPDF
-            text_content = page.get_text("text")
-            
-            # If page has very little text, try OCR with OCRopus
-            if len(text_content.strip().split()) < 5:
-                image = page.get_pixmap()
-                temp_image_file = tempfile.mktemp(".png")
-                image.save(temp_image_file, "png")
-                text_content = self.ocropus_ocr(temp_image_file)
-                os.remove(temp_image_file)
 
-            text += text_content
+        for page_num in range(reader.numPages):
+            page = reader.getPage(page_num)
+
+            # Extract text directly from PDF page
+            text += page.extractText()
+
+            # Extract text from images within the PDF page
+            xObject = page['/Resources']['/XObject'].getObject()
+            for obj in xObject:
+                if xObject[obj]['/Subtype'] == '/Image':
+                    data = xObject[obj]._data
+                    img = Image.open(io.BytesIO(data))
+                    text += image_to_string(img)
 
         return text
 
+    
 
     def remove_headers_and_footers(self, text):
         # This method can be expanded with more advanced logic if needed.
