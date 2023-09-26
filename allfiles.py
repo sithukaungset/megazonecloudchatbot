@@ -20,6 +20,8 @@ import tiktoken
 import sqlite3
 import fitz  # PyMuPDF
 import pytesseract
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_path
 import re
