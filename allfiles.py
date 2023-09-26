@@ -414,8 +414,7 @@ def main():
             text_splitter = CharacterTextSplitter(
                 separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
             chunks = text_splitter.split_text(text)
-            print(f"Text length: {len(text)}")
-            print(f"Number of chunks: {len(chunks)}")
+           
             # load the faiss vector store we saved into memory
             with st.spinner('Creating knowledge base...'):
                 vectorStore = FAISS.from_texts(chunks, embeddings)
