@@ -47,17 +47,19 @@ class PDFProcessor:
         self.client = DocumentAnalysisClient(endpoint=self.endpoint, credential=AzureKeyCredential(self.key))
 
     
-    def extract_text_from_pdf(self, docUrl):
-        text = ""
+    def extract_text_from_pdf(self, pdf_content):
+        """Extract text from the given PDF content."""
+        text_content = ""
 
-        poller = self.client.begin_analyze_document_from_url("prebuilt-document", docUrl)
+        # Process the PDF content directly
+        poller = self.client.begin_analyze_document("prebuilt-document", pdf_content)
         result = poller.result()
 
         for page in result.pages:
             for line in page.lines:
                 text_content += line.content + "\n"
 
-        return text
+        return text_content
     
     
 
@@ -83,8 +85,11 @@ class PDFProcessor:
 
         return segments
 
-    def process_pdf(self, pdf_stream):
-        text = self.extract_text_from_pdf(pdf_stream)
+    def process_pdf(self, uploaded_file):
+        """Process the uploaded PDF file."""
+        # Read the uploaded file's byte content
+        pdf_content = uploaded_file.read()
+        text = self.extract_text_from_pdf(pdf_content)
         text = self.remove_headers_and_footers(text)
         segments = self.segment_content(text)
         return segments
@@ -298,10 +303,7 @@ def main():
             if file_details["FileType"] == "application/pdf":
                  with st.spinner('Processing the PDF...'):
                     segments = pdf_processor.process_pdf(uploaded_file)
-                    # for section, content in segments.items():
-                    #         if content:
-                    #             st.write(f"{section.capitalize()}:\n{content}\n")
-                    text = "\n".join(filter(None, segments.values()))  # Assuming segments is a dict where values are the text
+                    text = "\n".join(filter(None, segments.values()))# Assuming segments is a dict where values are the text
 
 
 
