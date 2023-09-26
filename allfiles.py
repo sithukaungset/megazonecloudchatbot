@@ -226,27 +226,33 @@ def analyze_general_documents(pdf_stream):
     with open("temp_pdf_for_analysis.pdf", "rb") as temp_file:
         poller = document_analysis_client.begin_analyze_document("prebuilt-document", temp_file)
         result = poller.result()
-    
+
+    text_segments = []
+
     # Displaying Key-Value Pairs
-    st.subheader("Key-value pairs found in document")
+    text_segments.append("Key-value pairs found in document")
     for kv_pair in result.key_value_pairs:
         key_text = kv_pair.key.content if kv_pair.key else "N/A"
         value_text = kv_pair.value.content if kv_pair.value else "N/A"
-        st.write(f"Key: {key_text} - Value: {value_text}")
+        text_segments.append(f"Key: {key_text} - Value: {value_text}")
     
     # Displaying lines of text
-    st.subheader("Text content by page")
+    text_segments.append("Text content by page")
     for page in result.pages:
-        st.write(f"--- Page {page.page_number} ---")
+        text_segments.append(f"--- Page {page.page_number} ---")
         for line in page.lines:
-            st.write(line.content)
+            text_segments.append(line.content)
 
     # Displaying tables (just a basic example)
-    st.subheader("Tables in the document")
+    text_segments.append("Tables in the document")
     for table_idx, table in enumerate(result.tables):
-        st.write(f"--- Table {table_idx + 1} ---")
+        text_segments.append(f"--- Table {table_idx + 1} ---")
         for cell in table.cells:
-            st.write(f"Row {cell.row_index}, Column {cell.column_index}: {cell.content}")
+            text_segments.append(f"Row {cell.row_index}, Column {cell.column_index}: {cell.content}")
+
+    # Convert the list of text segments into a single string and return it
+    return "\n".join(text_segments)
+
 
 def main():
     # Establish a connection to the database (will create it if it doesn't exist)
@@ -366,25 +372,8 @@ def main():
             if uploaded_file:
                 if st.button("Analyze"):
                     with st.spinner("Analyzing the PDF..."):
-                        analyze_general_documents(uploaded_file)
+                        #analyze_general_documents(uploaded_file)
                         text = analyze_general_documents(uploaded_file)
-
-                        text_splitter = CharacterTextSplitter(
-                        separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
-                        chunks = text_splitter.split_text(text)
-
-                        # load the faiss vector store we saved into memory
-                        with st.spinner('Creating knowledge base...'):
-                            vectorStore = FAISS.from_texts(chunks, embeddings)
-
-                        # use the faiss vector store we saved to search the local document
-                        retriever = vectorStore.as_retriever(
-                            search_type="similarity", search_kwargs={"k": 2})
-
-                        # use the vector store as a retriever
-                        qa = RetrievalQA.from_chain_type(
-                            llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
-
 
 
             elif file_details["FileType"] == "text/plain":
@@ -427,24 +416,24 @@ def main():
             else:
                 st.error("File type not supported.")
 
-            # # split into chunks
-            # text_splitter = CharacterTextSplitter(
-            #     separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
-            # chunks = text_splitter.split_text(text)
+            # split into chunks
+            text_splitter = CharacterTextSplitter(
+                separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
+            chunks = text_splitter.split_text(text)
            
-            # # load the faiss vector store we saved into memory
-            # with st.spinner('Creating knowledge base...'):
-            #     vectorStore = FAISS.from_texts(chunks, embeddings)
+            # load the faiss vector store we saved into memory
+            with st.spinner('Creating knowledge base...'):
+                vectorStore = FAISS.from_texts(chunks, embeddings)
       
 
 
-            # # use the faiss vector store we saved to search the local document
-            # retriever = vectorStore.as_retriever(
-            #     search_type="similarity", search_kwargs={"k": 2})
+            # use the faiss vector store we saved to search the local document
+            retriever = vectorStore.as_retriever(
+                search_type="similarity", search_kwargs={"k": 2})
 
-            # # use the vector store as a retriever
-            # qa = RetrievalQA.from_chain_type(
-            #     llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
+            # use the vector store as a retriever
+            qa = RetrievalQA.from_chain_type(
+                llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
 
             # show user input
             prompt_template = st.text_input("Custom Prompt 🎯:")
