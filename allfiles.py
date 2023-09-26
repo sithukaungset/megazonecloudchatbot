@@ -370,11 +370,10 @@ def main():
             #         segments = pdf_processor.process_pdf(uploaded_file)
             #         text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
             if file_details["FileType"] == "application/pdf":
-                if st.button("Analyze"):
-                    with st.spinner("Analyzing the PDF..."):
+                with st.spinner("Analyzing the PDF..."):
                     #analyze_general_documents(uploaded_file)
-                        text = analyze_general_documents(uploaded_file)
-                        print(text)
+                    text = analyze_general_documents(uploaded_file)
+                    
 
                            
             elif file_details["FileType"] == "text/plain":
