@@ -20,4 +20,5 @@ requests
 python-pptx
 sympy
 Pillow
-
+azure.ai.formrecognizer
+azure-core

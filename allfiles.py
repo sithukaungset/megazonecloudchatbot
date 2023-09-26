@@ -21,6 +21,7 @@ import sqlite3
 import fitz  # PyMuPDF
 import pytesseract
 
+
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
 
@@ -38,20 +39,41 @@ import os
 import subprocess
 import tempfile
 
-# PDF Processor
-class PDFProcessor:
- 
-    def __init__(self):
-        self.key = os.environ.get('FR_KEY')
-        self.endpoint = os.environ.get('FR_ENDPOINT')
-        self.client = DocumentAnalysisClient(endpoint=self.endpoint, credential=AzureKeyCredential(self.key))
 
+class PDFProcessor:
+    
+    def __init__(self):
+        load_dotenv()
+        KEY = os.getenv("FR_KEY")
+        ENDPOINT = os.getenv("FR_ENDPOINT")
+        self.client = DocumentAnalysisClient(endpoint=ENDPOINT, credential=AzureKeyCredential(KEY))
+        
+    @staticmethod
+    def format_polygon(polygon):
+        if not polygon:
+            return "N/A"
+        return ", ".join(["[{}, {}]".format(p.x, p.y) for p in polygon])
+    
+    @staticmethod
+    def format_bounding_region(bounding_regions):
+        formatted_regions = []
+
+        for region in bounding_regions:
+            page = region.get("page", "")
+            top = region.get("top", "")
+            left = region.get("left", "")
+            width = region.get("width", "")
+            height = region.get("height", "")
+            
+            formatted = f"Page: {page}, Top: {top}, Left: {left}, Width: {width}, Height: {height}"
+            formatted_regions.append(formatted)
+        
+        return formatted_regions
     
     def extract_text_from_pdf(self, pdf_content):
         """Extract text from the given PDF content."""
         text_content = ""
 
-        # Process the PDF content directly
         poller = self.client.begin_analyze_document("prebuilt-document", pdf_content)
         result = poller.result()
 
@@ -61,16 +83,14 @@ class PDFProcessor:
 
         return text_content
     
-    
-
-    def remove_headers_and_footers(self, text):
-        # This method can be expanded with more advanced logic if needed.
+    @staticmethod
+    def remove_headers_and_footers(text):
         pages = text.split("\n\n")
-        cleaned_pages = [ "\n".join(page.split('\n')[1:-1]) for page in pages if len(page.split('\n')) > 2]
+        cleaned_pages = ["\n".join(page.split('\n')[1:-1]) for page in pages if len(page.split('\n')) > 2]
         return "\n\n".join(cleaned_pages)
 
-    def segment_content(self, text):
-        # This method can be enhanced to capture more sections accurately.
+    @staticmethod
+    def segment_content(text):
         sections = ["introduction", "methods", "results", "discussion", "references"]
         segments = {}
         
@@ -87,11 +107,11 @@ class PDFProcessor:
 
     def process_pdf(self, uploaded_file):
         """Process the uploaded PDF file."""
-        # Read the uploaded file's byte content
         pdf_content = uploaded_file.read()
         text = self.extract_text_from_pdf(pdf_content)
         text = self.remove_headers_and_footers(text)
         segments = self.segment_content(text)
+        
         return segments
 
 
@@ -301,11 +321,10 @@ def main():
             st.write(file_details)
 
             if file_details["FileType"] == "application/pdf":
-                 with st.spinner('Processing the PDF...'):
+                with st.spinner('Processing the PDF...'):
+                    pdf_processor = PDFProcessor()
                     segments = pdf_processor.process_pdf(uploaded_file)
-                    text = "\n".join(filter(None, segments.values()))# Assuming segments is a dict where values are the text
-
-
+                    text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
 
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
