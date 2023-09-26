@@ -36,30 +36,57 @@ import io
 class PDFProcessor:
     
     # Azure OCR API call
-    def azure_ocr(self, image_data, azure_endpoint, azure_key):
-        ocr_url = azure_endpoint 
-        headers = {
-            'Ocp-Apim-Subscription-Key': azure_key,
-            'Content-Type': 'application/octet-stream'
-        }
-        response = requests.post(ocr_url, headers=headers, data=image_data)
-        response.raise_for_status()
+    # def azure_ocr(self, image_data, azure_endpoint, azure_key):
+    #     ocr_url = azure_endpoint 
+    #     headers = {
+    #         'Ocp-Apim-Subscription-Key': azure_key,
+    #         'Content-Type': 'application/octet-stream'
+    #     }
+    #     response = requests.post(ocr_url, headers=headers, data=image_data)
+    #     response.raise_for_status()
 
-        analysis = response.json()
-        # Extract the word bounding boxes and text.
-        line_infos = [region["lines"] for region in analysis["regions"]]
-        text = ''
-        for line in line_infos:
-            for word_metadata in line:
-                for word_info in word_metadata["words"]:
-                    text += word_info["text"] + " "
-                text += '\n'
-        return text
+    #     analysis = response.json()
+    #     # Extract the word bounding boxes and text.
+    #     line_infos = [region["lines"] for region in analysis["regions"]]
+    #     text = ''
+    #     for line in line_infos:
+    #         for word_metadata in line:
+    #             for word_info in word_metadata["words"]:
+    #                 text += word_info["text"] + " "
+    #             text += '\n'
+    #     return text
+    
+    # def extract_text_from_pdf(self, uploaded_file):
+    #     azure_endpoint = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"  # replace with your endpoint
+    #     azure_key = "2fe1b91a80f94bb2a751f7880f00adf6"  # replace with your key
+
+    #     pdf_bytes = uploaded_file.read()
+    #     doc = fitz.open("pdf", pdf_bytes)
+    #     text = ""
+    #     for page in doc:
+    #         # Extract text using MuPDF
+    #         text_content = page.get_text("text")
+            
+    #         # If page has very little text, try OCR
+    #         if len(text_content.strip().split()) < 5:
+    #             image = page.get_pixmap()
+    #             image_data = image.tobytes()
+    #             text_content = self.azure_ocr(image_data, azure_endpoint, azure_key)
+
+    #         text += text_content
+
+    #     return text
+
+    def pytesseract_ocr(self, image_data):
+        # Convert the image data to an image
+        image = Image.open(io.BytesIO(image_data))
+
+        # Extract text using pytesseract
+        text_content = pytesseract.image_to_string(image)
+
+        return text_content
     
     def extract_text_from_pdf(self, uploaded_file):
-        azure_endpoint = "https://formtestlsw.cognitiveservices.azure.com/formrecognizer/v2.1/prebuilt/receipt/analyze"  # replace with your endpoint
-        azure_key = "2fe1b91a80f94bb2a751f7880f00adf6"  # replace with your key
-
         pdf_bytes = uploaded_file.read()
         doc = fitz.open("pdf", pdf_bytes)
         text = ""
@@ -67,15 +94,16 @@ class PDFProcessor:
             # Extract text using MuPDF
             text_content = page.get_text("text")
             
-            # If page has very little text, try OCR
+            # If page has very little text, try OCR with pytesseract
             if len(text_content.strip().split()) < 5:
                 image = page.get_pixmap()
                 image_data = image.tobytes()
-                text_content = self.azure_ocr(image_data, azure_endpoint, azure_key)
+                text_content = self.pytesseract_ocr(image_data)
 
             text += text_content
 
         return text
+
 
     def remove_headers_and_footers(self, text):
         # This method can be expanded with more advanced logic if needed.
