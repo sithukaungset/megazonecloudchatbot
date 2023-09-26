@@ -38,29 +38,41 @@ import tempfile
 
 # PDF Processor
 class PDFProcessor:
+ 
+    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/"
+    AZURE_HEADERS = {
+        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
+        "Content-Type": "application/pdf"
+    }
     
     def extract_text_from_pdf(self, pdf_stream):
-        #Read the stream's content into bytes
+        # Read the stream's content into bytes
         pdf_bytes = pdf_stream.read()
-        doc = fitz.open("pdf", pdf_bytes)
+
+        # Send the PDF data to Azure Form Recognizer
+        response = requests.post(self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=pdf_bytes)
+        if response.status_code != 202:
+            raise Exception(f"Failed to start the analysis: {response.text}")
+
+        # Get the operation location from the response
+        operation_url = response.headers["Operation-Location"]
+
+        # Poll the operation URL to check the status
+        while True:
+            status_response = requests.get(operation_url, headers=self.AZURE_HEADERS)
+            status = status_response.json()
+            if status["status"] in ["succeeded", "failed"]:
+                break
+            time.sleep(1)  # Wait for a short while before polling again
+
+        if status["status"] == "failed":
+            raise Exception(f"Analysis failed: {status}")
+
+        # Extract text from the result
         text = ""
-
-        for page in doc:
-            # Extract text directly from PDF page
-            text += page.get_text()
-
-            # Extract text from images within the PDF page
-            img_list = page.get_images(full=True)
-            for img in img_list:
-                xref = img[0]
-                base_image = doc.extract_image(xref)
-                image_bytes = base_image["image"]
-
-                # Convert image bytes to a PIL Image
-                img_obj = Image.open(io.BytesIO(image_bytes))
-                
-                # Extract text from the image using pytesseract
-                text += pytesseract.image_to_string(img_obj)
+        for page in status["analyzeResult"]["readResults"]:
+            for line in page["lines"]:
+                text += line["text"] + "\n"
 
         return text
     
