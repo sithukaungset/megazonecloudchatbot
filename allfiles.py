@@ -209,6 +209,44 @@ def translate(text, target_language='ko'):
     translated_text = text  # replace this with the translation API
     return translated_text
 
+def format_polygon(polygon):
+    if not polygon:
+        return "N/A"
+    return ", ".join(["[{}, {}]".format(p.x, p.y) for p in polygon])
+
+def analyze_general_documents(pdf_stream):
+    document_analysis_client = DocumentAnalysisClient(
+        endpoint="https://formtestlsw.cognitiveservices.azure.com", 
+        credential=AzureKeyCredential("2fe1b91a80f94bb2a751f7880f00adf6")
+    )
+
+    with open("temp_pdf_for_analysis.pdf", "wb") as temp_file:
+        temp_file.write(pdf_stream.read())
+
+    with open("temp_pdf_for_analysis.pdf", "rb") as temp_file:
+        poller = document_analysis_client.begin_analyze_document("prebuilt-document", temp_file)
+        result = poller.result()
+    
+    # Displaying Key-Value Pairs
+    st.subheader("Key-value pairs found in document")
+    for kv_pair in result.key_value_pairs:
+        key_text = kv_pair.key.content if kv_pair.key else "N/A"
+        value_text = kv_pair.value.content if kv_pair.value else "N/A"
+        st.write(f"Key: {key_text} - Value: {value_text}")
+    
+    # Displaying lines of text
+    st.subheader("Text content by page")
+    for page in result.pages:
+        st.write(f"--- Page {page.page_number} ---")
+        for line in page.lines:
+            st.write(line.content)
+
+    # Displaying tables (just a basic example)
+    st.subheader("Tables in the document")
+    for table_idx, table in enumerate(result.tables):
+        st.write(f"--- Table {table_idx + 1} ---")
+        for cell in table.cells:
+            st.write(f"Row {cell.row_index}, Column {cell.column_index}: {cell.content}")
 
 def main():
     # Establish a connection to the database (will create it if it doesn't exist)
@@ -320,11 +358,15 @@ def main():
                             "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
             st.write(file_details)
 
-            if file_details["FileType"] == "application/pdf":
-                with st.spinner('Processing the PDF...'):
-                    pdf_processor = PDFProcessor()
-                    segments = pdf_processor.process_pdf(uploaded_file)
-                    text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
+            # if file_details["FileType"] == "application/pdf":
+            #     with st.spinner('Processing the PDF...'):
+            #         pdf_processor = PDFProcessor()
+            #         segments = pdf_processor.process_pdf(uploaded_file)
+            #         text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
+            if uploaded_file:
+                if st.button("Analyze"):
+                    with st.spinner("Analyzing the PDF..."):
+                        analyze_general_documents(uploaded_file)
 
 
 
