@@ -21,6 +21,8 @@ import sqlite3
 import fitz  # PyMuPDF
 import pytesseract
 
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from azure.core.credentials import AzureKeyCredential
 
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_path
@@ -39,42 +41,24 @@ import tempfile
 # PDF Processor
 class PDFProcessor:
  
-    AZURE_ENDPOINT = "https://formtestlsw.cognitiveservices.azure.com/"
-    AZURE_HEADERS = {
-        "Ocp-Apim-Subscription-Key": "2fe1b91a80f94bb2a751f7880f00adf6",
-        "Content-Type": "application/pdf"
-    }
+    def __init__(self):
+        self.key = os.environ.get('FR_KEY')
+        self.endpoint = os.environ.get('FR_ENDPOINT')
+        self.client = DocumentAnalysisClient(endpoint=self.endpoint, credential=AzureKeyCredential(self.key))
+
     
-    def extract_text_from_pdf(self, pdf_stream):
-        # Read the stream's content into bytes
-        pdf_bytes = pdf_stream.read()
-
-        # Send the PDF data to Azure Form Recognizer
-        response = requests.post(self.AZURE_ENDPOINT, headers=self.AZURE_HEADERS, data=pdf_bytes)
-        if response.status_code != 202:
-            raise Exception(f"Failed to start the analysis: {response.text}")
-
-        # Get the operation location from the response
-        operation_url = response.headers["Operation-Location"]
-
-        # Poll the operation URL to check the status
-        while True:
-            status_response = requests.get(operation_url, headers=self.AZURE_HEADERS)
-            status = status_response.json()
-            if status["status"] in ["succeeded", "failed"]:
-                break
-            time.sleep(1)  # Wait for a short while before polling again
-
-        if status["status"] == "failed":
-            raise Exception(f"Analysis failed: {status}")
-
-        # Extract text from the result
+    def extract_text_from_pdf(self, docUrl):
         text = ""
-        for page in status["analyzeResult"]["readResults"]:
-            for line in page["lines"]:
-                text += line["text"] + "\n"
+
+        poller = self.client.begin_analyze_document_from_url("prebuilt-document", docUrl)
+        result = poller.result()
+
+        for page in result.pages:
+            for line in page.lines:
+                text_content += line.content + "\n"
 
         return text
+    
     
 
     def remove_headers_and_footers(self, text):
