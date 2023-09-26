@@ -53,10 +53,14 @@ class PDFProcessor:
             img_list = page.get_images(full=True)
             for img in img_list:
                 xref = img[0]
-                base_image = fitz.open("pdf", doc.extract_image(xref)["image"])
-                img_data = base_image.convert_to_pixmap()
-                img_obj = Image.frombytes("RGB", [img_data.width, img_data.height], img_data.samples)
-                text += image_to_string(img_obj)
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+
+                # Convert image bytes to a PIL Image
+                img_obj = Image.open(io.BytesIO(image_bytes))
+                
+                # Extract text from the image using pytesseract
+                text += pytesseract.image_to_string(img_obj)
 
         return text
     
