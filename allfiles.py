@@ -369,6 +369,22 @@ def main():
                         analyze_general_documents(uploaded_file)
                         text = analyze_general_documents(uploaded_file)
 
+                        text_splitter = CharacterTextSplitter(
+                        separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
+                        chunks = text_splitter.split_text(text)
+
+                        # load the faiss vector store we saved into memory
+                        with st.spinner('Creating knowledge base...'):
+                            vectorStore = FAISS.from_texts(chunks, embeddings)
+
+                        # use the faiss vector store we saved to search the local document
+                        retriever = vectorStore.as_retriever(
+                            search_type="similarity", search_kwargs={"k": 2})
+
+                        # use the vector store as a retriever
+                        qa = RetrievalQA.from_chain_type(
+                            llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
+
 
 
             elif file_details["FileType"] == "text/plain":
@@ -411,24 +427,24 @@ def main():
             else:
                 st.error("File type not supported.")
 
-            # split into chunks
-            text_splitter = CharacterTextSplitter(
-                separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
-            chunks = text_splitter.split_text(text)
+            # # split into chunks
+            # text_splitter = CharacterTextSplitter(
+            #     separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
+            # chunks = text_splitter.split_text(text)
            
-            # load the faiss vector store we saved into memory
-            with st.spinner('Creating knowledge base...'):
-                vectorStore = FAISS.from_texts(chunks, embeddings)
+            # # load the faiss vector store we saved into memory
+            # with st.spinner('Creating knowledge base...'):
+            #     vectorStore = FAISS.from_texts(chunks, embeddings)
       
 
 
-            # use the faiss vector store we saved to search the local document
-            retriever = vectorStore.as_retriever(
-                search_type="similarity", search_kwargs={"k": 2})
+            # # use the faiss vector store we saved to search the local document
+            # retriever = vectorStore.as_retriever(
+            #     search_type="similarity", search_kwargs={"k": 2})
 
-            # use the vector store as a retriever
-            qa = RetrievalQA.from_chain_type(
-                llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
+            # # use the vector store as a retriever
+            # qa = RetrievalQA.from_chain_type(
+            #     llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
 
             # show user input
             prompt_template = st.text_input("Custom Prompt 🎯:")
