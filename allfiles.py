@@ -320,25 +320,12 @@ def main():
                             "FileType": uploaded_file.type, "FileSize": uploaded_file.size}
             st.write(file_details)
 
-            # if file_details["FileType"] == "application/pdf":
-            #     with st.spinner('Processing the PDF...'):
-            #         pdf_processor = PDFProcessor()
-            #         segments = pdf_processor.process_pdf(uploaded_file)
-            #         text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
-
             if file_details["FileType"] == "application/pdf":
                 with st.spinner('Processing the PDF...'):
                     pdf_processor = PDFProcessor()
                     segments = pdf_processor.process_pdf(uploaded_file)
-                    
-                    # Extracting only non-empty sections from segments
-                    valid_segments = [segment for segment in segments.values() if segment]
-                    
-                    # Joining them with line breaks for display
-                    text = "\n\n".join(valid_segments)
-                    
-                    # Display the OCR applied text (assuming you use streamlit's st.write or equivalent for display)
-                    st.write(text)
+                    text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
+
 
 
             elif file_details["FileType"] == "text/plain":
