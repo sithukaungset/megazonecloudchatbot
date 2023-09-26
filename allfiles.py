@@ -369,25 +369,12 @@ def main():
             #         pdf_processor = PDFProcessor()
             #         segments = pdf_processor.process_pdf(uploaded_file)
             #         text = "\n".join(filter(None, segments.values())) # Assuming segments is a dict where values are the text sections
-            if uploaded_file:
+            if file_details["FileType"] == "application/pdf":
                 if st.button("Analyze"):
                     with st.spinner("Analyzing the PDF..."):
                         #analyze_general_documents(uploaded_file)
                         text = analyze_general_documents(uploaded_file)
 
-                        # Process the extracted text
-                        # split into chunks
-                        text_splitter = CharacterTextSplitter(
-                            separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
-                        chunks = text_splitter.split_text(text)
-
-                        # Load the faiss vector store into memory
-                        with st.spinner('Creating knowledge base...'):
-                            vectorStore = FAISS.from_texts(chunks, embeddings)
-
-                        # Use the faiss vector store to search the local document
-                        retriever = vectorStore.as_retriever(
-                            search_type="similarity", search_kwargs={"k": 2})
 
                         
                         
@@ -431,20 +418,20 @@ def main():
             else:
                 st.error("File type not supported.")
 
-            # # split into chunks
-            # text_splitter = CharacterTextSplitter(
-            #     separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
-            # chunks = text_splitter.split_text(text)
+            # split into chunks
+            text_splitter = CharacterTextSplitter(
+                separator="\n", chunk_size=10000, chunk_overlap=2000, length_function=len)
+            chunks = text_splitter.split_text(text)
            
-            # # load the faiss vector store we saved into memory
-            # with st.spinner('Creating knowledge base...'):
-            #     vectorStore = FAISS.from_texts(chunks, embeddings)
+            # load the faiss vector store we saved into memory
+            with st.spinner('Creating knowledge base...'):
+                vectorStore = FAISS.from_texts(chunks, embeddings)
       
 
 
-            # # use the faiss vector store we saved to search the local document
-            # retriever = vectorStore.as_retriever(
-            #     search_type="similarity", search_kwargs={"k": 2})
+            # use the faiss vector store we saved to search the local document
+            retriever = vectorStore.as_retriever(
+                search_type="similarity", search_kwargs={"k": 2})
 
             # use the vector store as a retriever
             qa = RetrievalQA.from_chain_type(
