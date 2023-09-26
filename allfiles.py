@@ -40,7 +40,9 @@ import tempfile
 class PDFProcessor:
     
     def extract_text_from_pdf(self, pdf_stream):
-        doc = fitz.open(stream=pdf_stream, filetype="pdf")
+        #Read the stream's content into bytes
+        pdf_bytes = pdf_stream.read()
+        doc = fitz.open("pdf", pdf_bytes)
         text = ""
 
         for page in doc:
