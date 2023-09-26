@@ -353,11 +353,12 @@ def main():
     else:
 
         # Create an instance of the PDFProcessor
-        pdf_processor = PDFProcessor()
+        #pdf_processor = PDFProcessor()
         # upload file
         uploaded_file = st.file_uploader("Upload your file", type=[
             "pdf", "csv", "txt", "xlsx", "xls"])
 
+        text = ""  # Initialize text here
         # extract the text
         if uploaded_file is not None:
             file_details = {"FileName": uploaded_file.name,
@@ -375,7 +376,7 @@ def main():
                         #analyze_general_documents(uploaded_file)
                         text = analyze_general_documents(uploaded_file)
 
-
+            
                         
                         
             elif file_details["FileType"] == "text/plain":
@@ -417,6 +418,7 @@ def main():
                     text = " ".join(map(str, df.values))
             else:
                 st.error("File type not supported.")
+
 
             # split into chunks
             text_splitter = CharacterTextSplitter(
