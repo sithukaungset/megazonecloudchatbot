@@ -389,12 +389,8 @@ def main():
                         retriever = vectorStore.as_retriever(
                             search_type="similarity", search_kwargs={"k": 2})
 
-                        # Use the vector store as a retriever
-                        qa = RetrievalQA.from_chain_type(
-                            llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
                         
-
-
+                        
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
                     text = uploaded_file.read().decode("utf-8")
@@ -450,9 +446,9 @@ def main():
             # retriever = vectorStore.as_retriever(
             #     search_type="similarity", search_kwargs={"k": 2})
 
-            # # use the vector store as a retriever
-            # qa = RetrievalQA.from_chain_type(
-            #     llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
+            # use the vector store as a retriever
+            qa = RetrievalQA.from_chain_type(
+                llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=False)
 
             # show user input
             prompt_template = st.text_input("Custom Prompt 🎯:")
