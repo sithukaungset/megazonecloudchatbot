@@ -20,7 +20,7 @@ import tiktoken
 import sqlite3
 import fitz  # PyMuPDF
 import pytesseract
-pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 
 from pdfminer.high_level import extract_text
 from pdf2image import convert_from_path
@@ -40,25 +40,23 @@ import tempfile
 class PDFProcessor:
     
     def extract_text_from_pdf(self, pdf_stream):
-        reader = PyPDF2.PdfFileReader(pdf_stream)
+        doc = fitz.open(stream=pdf_stream, filetype="pdf")
         text = ""
 
-        for page_num in range(reader.numPages):
-            page = reader.getPage(page_num)
-
+        for page in doc:
             # Extract text directly from PDF page
-            text += page.extractText()
+            text += page.get_text()
 
             # Extract text from images within the PDF page
-            xObject = page['/Resources']['/XObject'].getObject()
-            for obj in xObject:
-                if xObject[obj]['/Subtype'] == '/Image':
-                    data = xObject[obj]._data
-                    img = Image.open(io.BytesIO(data))
-                    text += image_to_string(img)
+            img_list = page.get_images(full=True)
+            for img in img_list:
+                xref = img[0]
+                base_image = fitz.open("pdf", doc.extract_image(xref)["image"])
+                img_data = base_image.convert_to_pixmap()
+                img_obj = Image.frombytes("RGB", [img_data.width, img_data.height], img_data.samples)
+                text += image_to_string(img_obj)
 
         return text
-
     
 
     def remove_headers_and_footers(self, text):
