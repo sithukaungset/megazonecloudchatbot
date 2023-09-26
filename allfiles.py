@@ -358,7 +358,6 @@ def main():
         uploaded_file = st.file_uploader("Upload your file", type=[
             "pdf", "csv", "txt", "xlsx", "xls"])
 
-        text = ""  # Initialize text here
         # extract the text
         if uploaded_file is not None:
             file_details = {"FileName": uploaded_file.name,
@@ -373,12 +372,11 @@ def main():
             if file_details["FileType"] == "application/pdf":
                 if st.button("Analyze"):
                     with st.spinner("Analyzing the PDF..."):
-                        #analyze_general_documents(uploaded_file)
+                    #analyze_general_documents(uploaded_file)
                         text = analyze_general_documents(uploaded_file)
+                        print(text)
 
-            
-                        
-                        
+                           
             elif file_details["FileType"] == "text/plain":
                 with st.spinner('Reading the TXT file...'):
                     text = uploaded_file.read().decode("utf-8")
@@ -429,8 +427,6 @@ def main():
             with st.spinner('Creating knowledge base...'):
                 vectorStore = FAISS.from_texts(chunks, embeddings)
       
-
-
             # use the faiss vector store we saved to search the local document
             retriever = vectorStore.as_retriever(
                 search_type="similarity", search_kwargs={"k": 2})
